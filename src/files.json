@@ -1,0 +1,50 @@
+[
+  {
+    "workspaceName": "",
+
+    "folders": [
+      {
+        "folderName": "",
+        "files": [
+          {
+            "fileName": "",
+            "time": {
+              "hours": 0,
+              "minutes": 0,
+              "seconds": 0
+            },
+            "totalTime": {
+              "hours": 0,
+              "minutes": 0,
+              "seconds": 0
+            },
+            "date": ""
+          }
+        ],
+        "time": {
+          "hours": 0,
+          "minutes": 0,
+          "seconds": 0
+        },
+
+        "totalTime": {
+          "hours": 0,
+          "minutes": 0,
+          "seconds": 0
+        },
+        "date": ""
+      }
+    ],
+    "time": {
+      "hours": 0,
+      "minutes": 0,
+      "seconds": 0
+    },
+    "totalTime": {
+      "hours": 0,
+      "minutes": 0,
+      "seconds": 0
+    },
+    "date": ""
+  }
+]
