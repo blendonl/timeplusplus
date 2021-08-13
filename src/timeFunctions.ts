@@ -1,9 +1,12 @@
-import { File } from "./file";
+import { File } from "./models/file";
 import { FileSystemError } from "vscode";
 
 export class TimeFunctions {
   constructor(public file: File) {}
+  
   interval: NodeJS.Timeout = setInterval(() => {}, 10000);
+  
+  
   public start() {
     this.interval = setInterval(() => {
       this.file.time.seconds += 1;
@@ -18,7 +21,22 @@ export class TimeFunctions {
     }, 1000);
   }
 
-  public stop() {
+  public stop() { 
+    this.file.totalTime.seconds += this.file.time.seconds;
+    if (this.file.totalTime.seconds >= 60) {
+      this.file.totalTime.minutes++;
+      this.file.totalTime.seconds = 0;
+    }
+
+    this.file.totalTime.minutes += this.file.time.minutes;
+    
+    if (this.file.totalTime.minutes >= 60) {
+      this.file.totalTime.hours++;
+    
+      this.file.totalTime.minutes = 0;
+    }
+    
+    this.file.totalTime.hours += this.file.time.hours;
     clearInterval(this.interval);
   }
 

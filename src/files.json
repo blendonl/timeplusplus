@@ -1,38 +1,22 @@
 [
   {
-    "workspaceName": "",
-
-    "folders": [
+    "folderName": "",
+    "folders": [],
+    "files": [
       {
-        "folderName": "",
-        "files": [
-          {
-            "fileName": "",
-            "time": {
-              "hours": 0,
-              "minutes": 0,
-              "seconds": 0
-            },
-            "totalTime": {
-              "hours": 0,
-              "minutes": 0,
-              "seconds": 0
-            },
-            "date": ""
-          }
-        ],
+
+        "fileName": "",
         "time": {
           "hours": 0,
           "minutes": 0,
           "seconds": 0
         },
-
         "totalTime": {
           "hours": 0,
           "minutes": 0,
           "seconds": 0
         },
-        "date": ""
+        "date": ""    
       }
     ],
     "time": {
