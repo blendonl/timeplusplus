@@ -12,46 +12,30 @@ import {
   open,
   readFile,
   readFileSync,
+  unlink,
   write,
   writeFile,
 } from "fs";
 import { basename } from "path";
-import { TimeInABottle } from "./timeinabottle";
+import {  TreeView } from "./timeinabottle";
 import { isDate, isRegExp } from "util";
 import { getDefaultSettings } from "http2";
 import { stringify } from "querystring";
 import { time } from "console";
 import milliseconds = require("mocha/lib/ms");
+import { type } from "os";
+import { Element } from "./models/Element";
 
 
-let workspaces: Workspace[];
+let workspaces: Folder[];
 let interval : NodeJS.Timeout;
-let file: File;
+let file: File | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-  let files: File[] = [
-    {
-      fileName: '',
-      time: {
-        hours: 0,
-        minutes: 0,
-        seconds: 0
-      },
-      totalTime: {
-        hours: 0,
-        minutes: 0,
-        seconds: 0
-      },
-      date: new Date()
-    }
-  ];
 
-  let file = files.find(fl => fl.fileName === '');
-
-  if(file !== undefined) {
-    file.fileName = 'aa';
-  }
+  
+  
   
   //Create status bar item
   let item = vscode.window.createStatusBarItem(
@@ -69,11 +53,19 @@ export function activate(context: vscode.ExtensionContext) {
             err ? reject(false) : resolve(true);
         });
   })) {
-    workspaces = JSON.parse(readFileSync("./timeplusplus.json", { encoding: "utf-8" }));
-  } else {
-    writeFile("./timeplusplus.json", JSON.stringify(workspaces), function (err) {
-      if (err) console.log(err);
+    readFile("./timeplusplus.json", { encoding: "utf-8" }, function(err, data) {
+      if(err !== null) {
+        unlink('./timeplusplus.json', function(err) {
+          save();
+        });
+      }
+      else {
+
+        workspaces = JSON.parse(data);
+      }
     });
+  } else {
+    save();
   }
 
   
@@ -96,14 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
       }, 1000);
     }
   }
-  /*
-    time = new Time(fl.time.hours, fl.time.minutes, fl.time.seconds);
-    time.start();
-    interval = setInterval(function () {
-      item.text = time.getTime();
-      item.show();
-    }, 1000);
-    */
+
 
   vscode.workspace.onDidOpenTextDocument(function (e: vscode.TextDocument) {
     file = addFile(
@@ -129,30 +114,31 @@ export function activate(context: vscode.ExtensionContext) {
     item.text = "";
     item.show();
     clearInterval(interval);
-    save();
+    updateAll(file);
     timeFunctions.stop();
-   // timeFunctions.stop();
-   // updateFile(file.fileName, "", vscode.workspace.name === undefined ? "" : vscode.workspace.name, workspaces, file.time);
+    save();
   });
 
+  let treeItems : TreeView = new TreeView('./timeplusplus.json');
 
-  vscode.window.registerTreeDataProvider("timeinabottle", new TimeInABottle(vscode.workspace.rootPath === undefined ? "" : vscode.workspace.rootPath))
-  vscode.window.createTreeView("timeinabottle", {
-    treeDataProvider: new TimeInABottle(vscode.workspace.rootPath === undefined ? "" : vscode.workspace.rootPath)
-  });
+  vscode.window.registerTreeDataProvider("timeplusplus", treeItems );
+
+  vscode.commands.registerCommand('timeplusplus.refreshEntry', () =>
+    treeItems.refresh()
+  );
 }
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
 
-function newWorkspace(name?: string) : Workspace[] | null {
+function newWorkspace(name?: string) : Folder[] | null {
   if(name === null) {
     return null;
   }
   return [{
-     workspaceName : name ?? '',
-     folders: [],
-     files:[],
+     name : name ?? '',
+     subElements: [],
+     isMainFolder: true,
      time: {
        hours : 0,
        minutes: 0,
@@ -170,15 +156,18 @@ function newWorkspace(name?: string) : Workspace[] | null {
 }
 
 function addFile(workspaceName: string, folderName: string, fileName: string) : File | undefined{
+  
   let file : File | undefined = findFile(workspaceName, folderName, fileName);
-  let workspace : Workspace | undefined;
+  
+  let workspace : Folder | undefined;
+  
   if(file === undefined) {
     
     if(folderName === '') {
-      workspace = workspaces.find(work => work.workspaceName === workspaceName);
+      workspace = workspaces.find(work => work.isMainFolder && work.name === workspaceName);
       
       file = {
-        fileName: fileName,
+        name: fileName,
         time: {
           hours: 0,
           minutes: 0,
@@ -191,12 +180,10 @@ function addFile(workspaceName: string, folderName: string, fileName: string) : 
         },
         date: new Date()
       };
-      workspace?.files.push(file);
+      workspace?.subElements.push(file);
 
       return file;
     }
-    
-    let folder: Folder | undefined = findFolder(workspaceName, '', folderName);
 
   }
 
@@ -204,41 +191,41 @@ function addFile(workspaceName: string, folderName: string, fileName: string) : 
     
 }
 
-function findFolder(workspaceName: string, folderMain: string, folderName: string) : Folder | undefined{
-  let workspace : Workspace | undefined = workspaces.find(work => work.workspaceName === workspaceName) ;
+// function findFolder(workspaceName: string, folderMain: string, folderName: string) : Folder | undefined{
+//   let workspace : Folder | undefined = workspaces.find(work => work.name === workspaceName) ;
 
-  let folder : Folder | undefined;
-  if(folderMain === '') {
-    folder = workspace?.folders.find(fld => fld.folderName === folderName);
-  } else {
-    workspace?.folders.forEach(fld => {
+//   let folder : Folder | undefined;
+//   if(folderMain === '') {
+//     folder = workspace?.folders.find(fld => fld.name === folderName);
+//   } else {
+//     workspace?.folders.forEach(fld => {
       
-      if(folder === undefined) {
-        folder = findFolderInFolder(fld, folderName);
-      }
-    });
-  }
+//       if(folder === undefined) {
+//         folder = findFolderInFolder(fld, folderName);
+//       }
+//     });
+//   }
 
 
-  return folder;
+//   return folder;
 
 
-}
+// }
 
 function findFile(workspaceName: string, folderName: string, fileName: string) : File | undefined{
   
   let file: File | undefined;
 
   workspaces.forEach(workspace => {
-    if(workspace.workspaceName === workspaceName) {
-
+    if(workspace.name === workspaceName) {
+      
       if(folderName === '') {
-        file = workspace.files.find(fl => fl.fileName === fileName);
+        file = workspace.subElements.find(fl => fl.name === fileName);
       }
 
 
     
-      let folder: Folder | undefined = workspace.folders.find(fold => fold.folderName === folderName);
+      let folder: Folder | undefined = workspace.subElements.find(fold => (fold as Folder) && fold.name === folderName) as Folder;
     
       
       if(file !== undefined && folder !== undefined) {
@@ -253,24 +240,30 @@ function findFile(workspaceName: string, folderName: string, fileName: string) :
 function fileExistsInFolder(folder: Folder, fileName: string) : File | undefined {
   
   
-  let ex: File | undefined = folder.files.find(f => f.fileName === fileName);
+  let ex: File | undefined = folder.subElements.find(f => f.name === fileName);
 
 
   if(ex === null) {
-    folder.folders.forEach(fold => { return fileExistsInFolder(fold, fileName)});
-  }
+    folder.subElements.forEach(fold => { 
+      try {
+      return fileExistsInFolder(fold as Folder, fileName);
+      } catch(err) {
+        console.log(err);
+      }
+  });
 
   return ex;
 
 }
+}
 
 function findFolderInFolder(mainFolder: Folder, folder: string) : Folder | undefined {
 
-  let ex : Folder | undefined = mainFolder.folders.find(fld => fld.folderName === folder);
+  let ex : Folder | undefined = mainFolder.subElements.find(fld => fld.name === folder) as Folder;
 
   if(ex === null) {
 
-    mainFolder.folders.forEach(fld => {return findFolderInFolder(fld, folder)})
+    mainFolder.subElements.forEach(fld => {return findFolderInFolder(fld as Folder, folder)})
 
   }
 
@@ -279,7 +272,71 @@ function findFolderInFolder(mainFolder: Folder, folder: string) : Folder | undef
 }
 
 function save() {
-  writeFile("./workspaces.json", JSON.stringify(workspaces), function (err) {
+  writeFile("./timeplusplus.json", JSON.stringify(workspaces), function (err) {
     if (err) console.log(err);
   });
 }
+
+function updateAll(file: File | undefined) {
+
+  if(file !== undefined) {
+
+    let folder: Folder | undefined = findFilesFolder(vscode.workspace.name ?? '', file.name);
+
+    let workspace: Folder | undefined = findWorkspace(vscode.workspace.name ?? '');
+
+    if(folder !== undefined) {
+      updateTime(folder.totalTime, file.totalTime);
+    }
+
+    if(workspace !== undefined) {
+      updateTime(workspace.totalTime, file.totalTime);
+    }
+  }
+
+}
+
+function findFilesFolder(workspaceName: string, fileName: string) : Folder | undefined {
+
+  let workspace: Folder | undefined = workspaces.find(w => w.name === workspaceName);
+
+  
+
+  return workspace?.subElements.find( f => f instanceof Folder && fileExistsInFolder(f, fileName) !==  undefined) as Folder;
+
+}
+
+function findWorkspace(workspaceName: string) : Folder | undefined {
+  return workspaces.find(w => w.name === workspaceName);
+}
+
+
+function updateTime(totalTime: Time, time: Time) {
+  totalTime.seconds += time.seconds;
+  if (totalTime.seconds >= 60) {
+
+    if(totalTime.seconds > 60) {
+      totalTime.minutes++;
+      totalTime.seconds -= 60;
+    } else {
+      totalTime.minutes++;
+      totalTime.seconds = 0;
+    }
+  }
+
+  totalTime.minutes += time.minutes;
+  
+  if (totalTime.minutes >= 60) {
+    if(totalTime.minutes > 60) {
+      totalTime.hours++;
+      totalTime.minutes -= 60;
+    } else {
+      totalTime.hours++;
+      totalTime.minutes = 0;
+    }
+  }
+  
+  totalTime.hours += time.hours;
+
+}
+

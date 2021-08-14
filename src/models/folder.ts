@@ -1,12 +1,27 @@
 import { Time } from "./time";
 import { File } from "./file";
-export class Folder {
+import { Element } from "./Element";
+export class Folder implements Element {
+  
+  name: string;
+  time: Time;
+  totalTime: Time;
+  date: Date;
+  
   constructor(
-  public folderName: string,
-  public folders: Folder[],
-  public files: File[],
-  public time: Time,
-  public totalTime: Time,
-  public date: Date,
-  ) {}
+    name: string,
+    public subElements: Element[],
+    public isMainFolder: boolean,
+    time: Time,
+    totalTime: Time,
+    date: Date,
+  ) {
+
+    this.name = name;
+    this.time = time;
+    this.totalTime = totalTime;
+    this.date = date;
+
+  }
+  
 }

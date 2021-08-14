@@ -1,6 +1,6 @@
 {
-  "name": "timeinabottle",
-  "displayName": "timeinabottle",
+  "name": "timeplusplus",
+  "displayName": "timeplusplus",
   "description": "tacks time",
   "version": "0.0.1",
   "engines": {
@@ -17,14 +17,14 @@
     "views": {
       "explorer": [
         {
-          "id": "timeinabottle",
-          "name": "Time in a Bottle"
+          "id": "timeplusplus",
+          "name": "Time Plus Plus"
         }
       ]
     },
     "commands": [
       {
-        "command": "timeinabottle.helloWorld",
+        "command": "timeplusplus.helloWorld",
         "title": "Hello World"
       }
     ]
