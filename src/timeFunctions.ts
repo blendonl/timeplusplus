@@ -1,5 +1,6 @@
 import { File } from "./models/file";
 import { FileSystemError } from "vscode";
+import { Time } from "./models/time";
 
 export class TimeFunctions {
   constructor(public file: File) {}
@@ -8,45 +9,44 @@ export class TimeFunctions {
   
   
   public start() {
+
+    this.file.time.seconds = 0;
+    this.file.time.minutes = 0;
+    this.file.time.hours = 0;
+
     this.interval = setInterval(() => {
-      this.file.time.seconds += 1;
-      if (this.file.time.seconds >= 60) {
-        this.file.time.minutes++;
-        this.file.time.seconds = 0;
-      }
-      if (this.file.time.minutes >= 60) {
-        this.file.time.hours++;
-        this.file.time.minutes = 0;
-      }
+      this.expandTime(this.file.time);
+      this.expandTime(this.file.totalTime);
     }, 1000);
   }
 
-  public stop() { 
-    this.file.totalTime.seconds += this.file.time.seconds;
-    if (this.file.totalTime.seconds >= 60) {
-      this.file.totalTime.minutes++;
-      this.file.totalTime.seconds = 0;
+  expandTime(time: Time) {
+    time.seconds +=1;
+
+    if (time.seconds >= 60) {
+      time.minutes++;
+      time.seconds = 0;
+    }
+    if (time.minutes >= 60) {
+      time.hours++;
+      time.minutes = 0;
     }
 
-    this.file.totalTime.minutes += this.file.time.minutes;
-    
-    if (this.file.totalTime.minutes >= 60) {
-      this.file.totalTime.hours++;
-    
-      this.file.totalTime.minutes = 0;
-    }
-    
-    this.file.totalTime.hours += this.file.time.hours;
+  }
+
+  public stop() { 
+
     clearInterval(this.interval);
+ 
   }
 
   public getTime() {
     return (
-      this.file.time.hours +
+      this.file.totalTime.hours +
       ":" +
-      this.file.time.minutes +
+      this.file.totalTime.minutes +
       ":" +
-      this.file.time.seconds
+      this.file.totalTime.seconds
     );
   }
 }

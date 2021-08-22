@@ -1,16 +1,10 @@
 // @ts-nocheck
 import { basename } from 'path';
 import { Time } from './models/time';
-import { File } from './models/file';
 import { Folder } from './models/folder';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
-import {Workspace} from './models/workspace';
-import { deepStrictEqual } from 'assert';
-import { type } from 'os';
-import { isDate } from 'util';
-
+import { Element } from './models/Element';
 export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   constructor(public workspaceRoot: string) {
 
@@ -24,7 +18,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   }
 
   getChildren(element?: TreeItem): Thenable<TreeItem[]>{
-      this.refresh();
+     
       return Promise.resolve(this.getElements(element));
     
    
@@ -46,21 +40,24 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
         ));
     }
 
-    if(element.title === 'workspace') {
-      let fold : Folder | undefined = workspaces.find(w => w.name === element.name);
+  
+      let fold : Folder | undefined = element.title === 'workspace' ? this.findFolder('Client','.') : this.findFolder('Client', element.name);
+
+      let a : Element = workspaces[0] as Element;
+
+      let b = a as Folder;
+
       
       if(fold !== undefined) {
-        return fold.subElements.map(sb => new TreeItem(
+        return fold.subElements.map(sb => 'subElements' in sb ? new TreeItem(sb.name, 'folder', sb.totalTime, sb.date, vscode.TreeItemCollapsibleState.Collapsed) : new TreeItem(
             sb.name,
             'file',
             sb.totalTime,
             sb.date,
             vscode.TreeItemCollapsibleState.None
       ));
-      }
-    }
+        }
 
-    return [];
   
   }
 
@@ -74,7 +71,56 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
 
 
+   seperateFolder(folderName: string) : string[] {
+
+    let strings : string[] = [];
+    let i = 0;
+    let count = 0;
+      for (let index = 0; index < folderName.length; index++) {
+        if(folderName[index] === '\\' || folderName[index] === '/') {
+          count++;
+          
+        
+            strings.push(folderName.slice(i, index));
+            i = index + 1;
+          }
+        
+  
+      }
+  
+      strings.push(folderName.slice(i, folderName.length));
+  
+      return strings;
+  }
+   
+  
+  
+ findFolder(workspaceName: string, folderName: string) {
+
+  let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
+  
+    let foldersNames: string[] = this.seperateFolder(folderName);
+  
+    let folder : Folder | undefined = workspaces.find(w => w.name === workspaceName) as Folder;
+  
+  
+    if(folderName !== '.') {
+  
+     for(let i = 0; i < foldersNames.length; i++) {
+  
+        folder = folder?.subElements.find(f => f.name === foldersNames[i]) as Folder;
+      
+      }
+    }
+  
+    return folder;
+  
+    
+  }
+
+
 }
+
 
 
 

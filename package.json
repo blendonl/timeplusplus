@@ -2,6 +2,7 @@
   "name": "timeplusplus",
   "displayName": "timeplusplus",
   "description": "tacks time",
+  "publisher": "Blendonl",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.49.0"
@@ -14,6 +15,15 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "menus": {
+      "view/title": [
+          {
+              "command": "timeplusplus.refreshEntry",
+              "when": "view == timeplusplus",
+              "group": "navigation"
+          }
+      ]
+  },
     "views": {
       "explorer": [
         {
@@ -23,6 +33,11 @@
       ]
     },
     "commands": [
+      
+        {
+            "command": "timeplusplus.refreshEntry",
+            "title": "Refresh"
+        },
       {
         "command": "timeplusplus.helloWorld",
         "title": "Hello World"
