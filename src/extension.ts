@@ -24,9 +24,9 @@ let file: File | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-  unlink('./timeplusplus.json', function(ee) {  
+  // unlink('./timeplusplus.json', function(ee) {  
 
-  });
+  // });
   
   //Create status bar item
   let item = vscode.window.createStatusBarItem(
@@ -251,7 +251,7 @@ function seperateFolder(folderName: string, startIndex: number) : string[] {
 
 function findFolder(workspaceName: string, folderName: string) {
 
-  let foldersNames: string[] = seperateFolder(folderName);
+  let foldersNames: string[] = seperateFolder(folderName, 0);
 
   let folder : Folder | undefined = workspaces.find(w => w.name === workspaceName) as Folder;
 

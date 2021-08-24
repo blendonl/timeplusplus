@@ -2,8 +2,8 @@
   "name": "timeplusplus",
   "displayName": "time++",
   "description": "tacks time",
-  "publisher": "Blendonl",
-  "version": "0.0.4",
+  "publisher": "blendonluta",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.49.0"
   },
