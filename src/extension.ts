@@ -24,9 +24,9 @@ let file: File | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-  // unlink('./timeplusplus.json', function(ee) {  
+  unlink('./timeplusplus.json', function(ee) {  
 
-  // });
+  });
   
   //Create status bar item
   let item = vscode.window.createStatusBarItem(
@@ -86,6 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   vscode.workspace.onDidOpenTextDocument(function (e: vscode.TextDocument) {
 
+    if(!e.fileName.endsWith('.git')) {
     file = addFile(
       vscode.workspace.name ?? '',
       e.fileName,
@@ -104,17 +105,22 @@ export function activate(context: vscode.ExtensionContext) {
         item.text = timeFunctions.getTime();
         item.show();
       }, 1000);
+    
+    }
     }
   })
   
 
   vscode.workspace.onDidCloseTextDocument(function (e: vscode.TextDocument) {
+
+    if(!e.fileName.endsWith('.git')) {
     item.text = "";
     item.show();
     clearInterval(interval);
     updateAll(file);
     timeFunctions.stop();
     save();
+    }
   });
 
   let treeItems : TreeView = new TreeView('./timeplusplus.json');
