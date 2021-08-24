@@ -7,14 +7,11 @@ import { Utils } from "./utils";
 import {
   existsSync,
   readFileSync,
-  unlink,
   writeFile,
 } from "fs";
 import { dirname } from "path";
 import {  TreeView } from "./timeplusplus";
 
-import milliseconds = require("mocha/lib/ms");
-import { time } from "console";
 
 
 
@@ -24,9 +21,9 @@ let file: File | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-  unlink('./timeplusplus.json', function(ee) {  
+  // unlink('./timeplusplus.json', function(ee) {  
 
-  });
+  // });
   
   //Create status bar item
   let item = vscode.window.createStatusBarItem(
