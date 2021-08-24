@@ -7,9 +7,14 @@ import * as fs from 'fs';
 import { Element } from './models/Element';
 import { Utils } from './utils';
 export class TreeView implements vscode.TreeDataProvider<TreeItem> {
+
+  
+ 
+ workspaceName: string 
   constructor(public workspaceRoot: string) {
 
 
+   this.workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
 
   }
 
@@ -28,7 +33,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   getElements(element?: TreeItem) : TreeItem[] {
 
     let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
-  
+
     
     if(element === undefined) {
       return workspaces.map(workspace => 
@@ -42,7 +47,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
     }
 
   
-      let fold : Folder | undefined = element.title === 'workspace' ? this.findFolder(vscode.workspace.name,'.') : this.findFolder(vscode.workspace.name, element.name);
+      let fold : Folder | undefined = element.title === 'workspace' ? this.findFolder(this.workspaceName,'.') : this.findFolder(this.workspaceName, element.name);
 
 
       
@@ -68,6 +73,9 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   }
 
 
+  getWorkspaceName() : string {
+    
+  }
 
    seperateFolder(folderName: string) : string[] {
 
