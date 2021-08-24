@@ -1,9 +1,9 @@
 {
   "name": "timeplusplus",
-  "displayName": "timeplusplus",
+  "displayName": "time++",
   "description": "tacks time",
   "publisher": "Blendonl",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.49.0"
   },
@@ -11,36 +11,31 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:csharp"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "menus": {
       "view/title": [
-          {
-              "command": "timeplusplus.refreshEntry",
-              "when": "view == timeplusplus",
-              "group": "navigation"
-          }
+        {
+          "command": "timeplusplus.refreshEntry",
+          "when": "view == timeplusplus",
+          "group": "navigation"
+        }
       ]
-  },
+    },
     "views": {
       "explorer": [
         {
           "id": "timeplusplus",
-          "name": "Time Plus Plus"
+          "name": "Time++"
         }
       ]
     },
     "commands": [
-      
-        {
-            "command": "timeplusplus.refreshEntry",
-            "title": "Refresh"
-        },
       {
-        "command": "timeplusplus.helloWorld",
-        "title": "Hello World"
+        "command": "timeplusplus.refreshEntry",
+        "title": "Refresh"
       }
     ]
   },
@@ -53,16 +48,19 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.49.0",
     "@types/glob": "^7.1.3",
     "@types/mocha": "^8.0.0",
     "@types/node": "^14.0.27",
-    "eslint": "^7.9.0",
+    "@types/vscode": "^1.49.0",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
+    "eslint": "^7.9.0",
     "glob": "^7.1.6",
     "mocha": "^8.1.3",
-    "typescript": "^4.0.2",
+    "typescript": "^4.3.5",
     "vscode-test": "^1.4.0"
+  },
+  "dependencies": {
+    "tsc": "^2.0.3"
   }
 }

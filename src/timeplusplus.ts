@@ -5,6 +5,7 @@ import { Folder } from './models/folder';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Element } from './models/Element';
+import { Utils } from './utils';
 export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   constructor(public workspaceRoot: string) {
 
@@ -41,11 +42,8 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
     }
 
   
-      let fold : Folder | undefined = element.title === 'workspace' ? this.findFolder('Client','.') : this.findFolder('Client', element.name);
+      let fold : Folder | undefined = element.title === 'workspace' ? this.findFolder(vscode.workspace.name,'.') : this.findFolder(vscode.workspace.name, element.name);
 
-      let a : Element = workspaces[0] as Element;
-
-      let b = a as Folder;
 
       
       if(fold !== undefined) {
@@ -108,7 +106,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   
      for(let i = 0; i < foldersNames.length; i++) {
   
-        folder = folder?.subElements.find(f => f.name === foldersNames[i]) as Folder;
+        folder = folder?.subElements.find(f => f.name === Utils.mergeFolderNames(foldersNames, 0, i)) as Folder;
       
       }
     }

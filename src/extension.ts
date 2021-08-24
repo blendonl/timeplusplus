@@ -1,31 +1,21 @@
 import { TimeFunctions } from "./timeFunctions";
-import { Workspace } from "./models/workspace";
 import { Folder } from "./models/folder";
 import { File } from "./models/file";
 import { Time } from "./models/time";
 import * as vscode from "vscode";
+import { Utils } from "./utils";
 import {
-  access,
-  constants,
   existsSync,
-  fstat,
-  open,
-  readFile,
   readFileSync,
   unlink,
-  write,
   writeFile,
 } from "fs";
-import { basename, dirname } from "path";
+import { dirname } from "path";
 import {  TreeView } from "./timeplusplus";
-import { isDate, isRegExp } from "util";
-import { getDefaultSettings } from "http2";
-import { stringify } from "querystring";
-import { time } from "console";
+
 import milliseconds = require("mocha/lib/ms");
-import { type } from "os";
-import { Element } from "./models/Element";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
+import { time } from "console";
+
 
 
 let workspaces: Folder[];
@@ -34,39 +24,45 @@ let file: File | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
 
-  
+  unlink('./timeplusplus.json', function(ee) {  
+
+  });
   
   //Create status bar item
   let item = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     100
   );
+
+  item.text = vscode.workspace.name ?? 'nameee';
+
+  workspaces = [];
+
+    if(existsSync('./timeplusplus.json')) {
+      
+      try {
+      workspaces = JSON.parse(readFileSync('./timeplusplus.json', {encoding: 'utf-8'},));
+      }catch(err) {
+        item.text = err;
+      }
+    } else {
+      try {
+      save();
+
+      } catch(err) {
+        item.text = err;
+      }
+    }
+
+    if(findWorkspace(vscode.workspace.name ?? 'No Name') === undefined) {
+      
+      workspaces.push(newWorkspace(vscode.workspace.name ?? 'No Name'));
+    }
   
   
   //Read workspace
-  workspaces = newWorkspace(vscode.workspace.name) ?? [];
 
-  if (existsSync("./timeplusplus.json") && 
-        new Promise((resolve, reject) => {
-          access("./timeplusplus.json", constants.F_OK, (err) => {
-            err ? reject(false) : resolve(true);
-        });
-  })) {
-    readFile("./timeplusplus.json", { encoding: "utf-8" }, function(err, data) {
-      if(err !== null) {
-        unlink('./timeplusplus.json', function(err) {
-          
-        });
-      }
-      else {
-
-        workspaces = JSON.parse(data);
-      }
-    });
-  } else {
-    save();
-  }
-
+ 
   
   let timeFunctions: TimeFunctions;
 
@@ -89,13 +85,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 
   vscode.workspace.onDidOpenTextDocument(function (e: vscode.TextDocument) {
+
     file = addFile(
       vscode.workspace.name ?? '',
       e.fileName,
     );
 
     if(file !== undefined) {
-
+      if(timeFunctions !== undefined) {
+        timeFunctions.stop();
+      } else {
+        timeFunctions = new TimeFunctions(file);
+      }
       timeFunctions.stop();
       timeFunctions.file = file;
       timeFunctions.start();
@@ -128,11 +129,8 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 
-function newWorkspace(name?: string) : Folder[] | null {
-  if(name === null) {
-    return null;
-  }
-  return [{
+function newWorkspace(name: string) : Folder {
+  return {
      name : name ?? '',
      subElements: [],
      isMainFolder: true,
@@ -147,7 +145,7 @@ function newWorkspace(name?: string) : Folder[] | null {
        seconds: 0,
      },
      date: new Date(),
-  }];
+  };
 
   
 }
@@ -227,7 +225,7 @@ function getFolderName(fileName: string) : string {
   return dirname(vscode.workspace.asRelativePath(fileName));
 }
 
-function seperateFolder(folderName: string) : string[] {
+function seperateFolder(folderName: string, startIndex: number) : string[] {
 
   let strings : string[] = [];
   let i = 0;
@@ -278,16 +276,16 @@ function addFolder(workspaceName: string, folderName: string) : Folder{
 
     folder = workspaces.find(w => w.name === workspaceName) as Folder;
 
-    let foldersNames : string[] = seperateFolder(folderName);
+    let foldersNames : string[] = seperateFolder(folderName, 0);
 
     for (let index = 0; index < foldersNames.length; index++) {
 
-      let temp : Folder = folder.subElements.find(f => f.name === foldersNames[0]) as Folder;
+      let temp : Folder = folder.subElements.find(f => f.name === Utils.mergeFolderNames(foldersNames, 0, index)) as Folder;
 
 
       if(temp === undefined) {
 
-        folder.subElements.push(new Folder(foldersNames[0], [], false, new Time(0, 0, 0), new Time(0, 0, 0), new Date()));
+        folder.subElements.push(new Folder(Utils.mergeFolderNames(foldersNames, 0, index), [], false, new Time(0, 0, 0), new Time(0, 0, 0), new Date()));
         folder = folder.subElements[folder.subElements.length -1] as Folder;
       } else {
 
@@ -319,7 +317,13 @@ function addFolder(workspaceName: string, folderName: string) : Folder{
 
 
 
+
+
 function findFile(workspaceName: string, folderName: string, fileName: string) : File | undefined{
+
+  if(folderName === '.') {
+    return workspaces.find(work => work.name === workspaceName)?.subElements.find(f => f.name === fileName);
+  }
   
   let folder: Folder | undefined = findFolder(workspaceName, folderName);
 
