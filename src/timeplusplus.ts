@@ -10,7 +10,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
   
  
- workspaceName: string 
+ workspaceName: string;
   constructor(public workspaceRoot: string) {
 
 
@@ -32,6 +32,8 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
   getElements(element?: TreeItem) : TreeItem[] {
 
+
+    try {
     let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
 
     
@@ -61,7 +63,9 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
       ));
         }
 
-  
+      } catch(err) {
+        
+      }
   }
 
 

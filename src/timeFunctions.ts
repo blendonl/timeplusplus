@@ -6,6 +6,8 @@ export class TimeFunctions {
   constructor(public file: File) {}
   
   interval: NodeJS.Timeout = setInterval(() => {}, 10000);
+
+  isStrarted: boolean = false;
   
   
   public start() {
@@ -13,6 +15,8 @@ export class TimeFunctions {
     this.file.time.seconds = 0;
     this.file.time.minutes = 0;
     this.file.time.hours = 0;
+
+    this.isStrarted = true;
 
     this.interval = setInterval(() => {
       this.expandTime(this.file.time);
@@ -37,6 +41,8 @@ export class TimeFunctions {
   public stop() { 
 
     clearInterval(this.interval);
+
+    this.isStrarted = false;
  
   }
 

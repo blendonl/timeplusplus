@@ -10,8 +10,9 @@ import {
   unlink,
   writeFile,
 } from "fs";
-import { dirname } from "path";
+import { dirname, toNamespacedPath } from "path";
 import {  TreeView } from "./timeplusplus";
+import { time } from "console";
 
 
 
@@ -20,12 +21,13 @@ let workspaces: Folder[];
 let interval : NodeJS.Timeout;
 let file: File | undefined;
 let workspaceName: string;
+let timeFunctions: TimeFunctions[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
 
-  unlink('./timeplusplus.json', function(ee) {  
+  // unlink('./timeplusplus.json', function(ee) {  
 
-  });
+  // });
   
   //Create status bar item
   let item = vscode.window.createStatusBarItem(
@@ -67,7 +69,6 @@ export function activate(context: vscode.ExtensionContext) {
 
  
   
-  let timeFunctions: TimeFunctions;
 
   if (vscode.window.activeTextEditor !== undefined) {
     file = addFile(
@@ -77,43 +78,88 @@ export function activate(context: vscode.ExtensionContext) {
 
     if(file !== undefined) {
       
-      timeFunctions = new TimeFunctions(file);
-      timeFunctions.start();
+      timeFunctions.push(new TimeFunctions(file));
+      timeFunctions[timeFunctions.length - 1].start();
       interval = setInterval(() => {
-        item.text = timeFunctions.getTime();
+        item.text = timeFunctions[timeFunctions.length - 1].getTime();
         item.show();
       }, 1000);
     }
   }
 
 
-  vscode.workspace.onDidOpenTextDocument(function (e: vscode.TextDocument) {
+  let visibleTextEditors:vscode.TextEditor[] = vscode.window.visibleTextEditors;
+
+  vscode.window.onDidChangeVisibleTextEditors( (e: vscode.TextEditor[]) => {
+
+    visibleTextEditors = e;
+
+    stopTime(visibleTextEditors);
+
+
+  });
+
+  vscode.window.onDidChangeActiveTextEditor( (e: vscode.TextEditor | undefined) => {
 
     
+    if(e !== undefined && e.document.fileName !== undefined) {
 
-    if(!e.fileName.endsWith('.git') && e.fileName.includes('.') && e.languageId !== 'jsonc') {
-    file = addFile(
-      workspaceName ?? '',
-      e.fileName,
-    );
+      if(!e.document.fileName.endsWith('.git') && e.document.fileName.includes('.') && e.document.languageId !== 'jsonc') {
+        file = addFile(
+          workspaceName ?? '',
+          e.document.fileName,
+        );
+    
+        if(file !== undefined) {
 
-    if(file !== undefined) {
-      if(timeFunctions !== undefined) {
-        timeFunctions.stop();
-      } else {
-        timeFunctions = new TimeFunctions(file);
+          let timeFunc = findTimeFunction(file.name);
+
+          if(timeFunc === undefined) {
+            timeFunctions.push(new TimeFunctions(file));
+
+            timeFunc = timeFunctions[timeFunctions.length -1];
+          }
+        
+          clearInterval(interval);
+          
+          if(!timeFunc.isStrarted) {
+
+            timeFunc.start();
+          }
+          interval = setInterval(() => {
+            item.text = timeFunc?.getTime() ?? '0:0:0';
+            item.show();
+          }, 1000);
+        
+        }
       }
-      timeFunctions.stop();
-      timeFunctions.file = file;
-      timeFunctions.start();
-      interval = setInterval(() => {
-        item.text = timeFunctions.getTime();
-        item.show();
-      }, 1000);
-    
-    }
     }
   });
+
+
+  // vscode.workspace.onDidOpenTextDocument(function (e: vscode.TextDocument) {
+
+    
+
+  //   if(!e.fileName.endsWith('.git') && e.fileName.includes('.') && e.languageId !== 'jsonc') {
+  //   file = addFile(
+  //     workspaceName ?? '',
+  //     e.fileName,
+  //   );
+
+  //   if(file !== undefined) {
+    
+  //     timeFunctions.push(new TimeFunctions(file));
+      
+  //     timeFunctions[timeFunctions.length - 1].start();
+  //     interval = setInterval(() => {
+  //       item.text = timeFunctions[timeFunctions.length - 1].getTime();
+  //       item.show();
+  //     }, 1000);
+    
+  //   }
+  //   }
+  // });
   
 
   vscode.workspace.onDidCloseTextDocument(function (e: vscode.TextDocument) {
@@ -123,7 +169,13 @@ export function activate(context: vscode.ExtensionContext) {
     item.show();
     clearInterval(interval);
     updateAll(file);
-    timeFunctions.stop();
+
+    let timeFunc = findTimeFunction(e.fileName);
+
+    if(timeFunc !== undefined) {
+      timeFunc.stop();
+    }
+
     save();
     }
   });
@@ -403,3 +455,29 @@ function updateTime(totalTime: Time, time: Time) {
 
 }
 
+function findTimeFunction(fileName: string) : TimeFunctions | undefined {
+  let timeFunc : TimeFunctions | undefined =  timeFunctions.find(tf => tf.file.name === fileName);
+
+  if(timeFunc === undefined) {
+    return undefined;
+  }
+
+  return timeFunc;
+}
+
+
+function stopTime(textEditors: vscode.TextEditor[]) {
+
+  timeFunctions.forEach(tm => {
+    if(textEditors.find(tx => tx.document.fileName === tm.file?.name ?? '') === undefined) {
+      if(tm.isStrarted) {
+        tm.stop();
+      }
+    } else {
+      if(!tm.isStrarted) {
+        tm.start();
+      }
+    }
+  });
+
+}
