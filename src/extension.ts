@@ -172,7 +172,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     let timeFunc = findTimeFunction(e.fileName);
 
-    if(timeFunc !== undefined) {
+    if(timeFunc !== undefined && timeFunc.isStrarted) {
       timeFunc.stop();
     }
 
