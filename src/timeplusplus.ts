@@ -13,9 +13,9 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
  workspaceName: string;
   constructor(public workspaceRoot: string) {
 
-
-   this.workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
-
+    if(vscode.workspace.workspaceFolders !== undefined) {
+       this.workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
+    }
   }
 
   

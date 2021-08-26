@@ -1,6 +1,7 @@
 import { Time } from "./time";
 import { File } from "./file";
 import { Element } from "./Element";
+import { Utils } from "../utils";
 export class Folder implements Element {
   
   name: string;
@@ -10,7 +11,7 @@ export class Folder implements Element {
   
   constructor(
     name: string,
-    public subElements: Element[],
+    public subElements: Element[] = [],
     public isMainFolder: boolean,
     time: Time,
     totalTime: Time,
@@ -23,5 +24,8 @@ export class Folder implements Element {
     this.date = date;
 
   }
+
+
+ 
   
 }

@@ -1,3 +1,5 @@
+import { Time } from "./models/time";
+
 export class Utils {
     public static mergeFolderNames(folderNames: string[], startIndex : number, endIndex: number) : string {
 
@@ -13,5 +15,28 @@ export class Utils {
       
     }
 
+
+    public static addTime(totalTime: Time, time: Time) {
+      totalTime.seconds += time.seconds;
+      if (totalTime.seconds >= 60) {
+    
+        totalTime.minutes++;
+    
+        totalTime.seconds > 60 ? totalTime.seconds -=60 : totalTime.seconds = 0;
+       
+      }
+    
+      totalTime.minutes += time.minutes;
+      
+      if (totalTime.minutes >= 60) {
+        totalTime.hours++;
+        
+        totalTime.minutes > 60 ? totalTime.minutes -= 60 :totalTime.minutes = 0;
+        
+      }
+      
+      totalTime.hours += time.hours;
+    
+    }
 
 }
