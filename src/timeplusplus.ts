@@ -41,6 +41,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
       return workspaces.map(workspace => 
         new TreeItem(
           workspace.name, 
+          '',
           'workspace', 
           workspace.totalTime, 
           workspace.date, 
@@ -49,18 +50,23 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
     }
 
   
-      let fold : Folder | undefined = element.title === 'workspace' ? this.findFolder(this.workspaceName,'.') : this.findFolder(this.workspaceName, element.name);
+      let fold : Folder | undefined =   element.title === 'workspace' ? this.findFolder(element.name,'.') : this.findFolder(element.workspaceName, element.name);
 
 
       
       if(fold !== undefined) {
-        return fold.subElements.map(sb => 'subElements' in sb ? new TreeItem(sb.name, 'folder', sb.totalTime, sb.date, vscode.TreeItemCollapsibleState.Collapsed) : new TreeItem(
+        return fold.subElements.map(sb => 'subElements' in sb ? 
+           new TreeItem(sb.name, fold?.isMainFolder ? fold.name : element.workspaceName,'folder',  sb.totalTime, sb.date, vscode.TreeItemCollapsibleState.Collapsed) 
+           
+           
+           : new TreeItem(
             sb.name,
+            fold?.isMainFolder ? fold.name : element.workspaceName,
             'file',
             sb.totalTime,
             sb.date,
             vscode.TreeItemCollapsibleState.None
-      ));
+      )); 
         }
 
       } catch(err) {
@@ -108,8 +114,14 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
  findFolder(workspaceName: string, folderName: string) {
 
   let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
+
+  let foldersNames: string[] = [];
+
+  if(folderName !== '.') {
+
+     foldersNames = this.seperateFolder(folderName);
+  }
   
-    let foldersNames: string[] = this.seperateFolder(folderName);
   
     let folder : Folder | undefined = workspaces.find(w => w.name === workspaceName) as Folder;
   
@@ -137,6 +149,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 export class TreeItem extends vscode.TreeItem {
   constructor(
   public name: string,
+  public workspaceName: string,
   public title: string,
   public totalTime: Time,
   public date: Date,

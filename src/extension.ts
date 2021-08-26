@@ -13,6 +13,7 @@ import {
 import { dirname, toNamespacedPath } from "path";
 import {  TreeView } from "./timeplusplus";
 import { time } from "console";
+import { clearInterval } from "timers";
 
 
 
@@ -71,6 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
   
 
   if (vscode.window.activeTextEditor !== undefined) {
+
     file = addFile(
       workspaceName ?? '',
       vscode.window.activeTextEditor.document.fileName ?? ''
@@ -165,6 +167,9 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidCloseTextDocument(function (e: vscode.TextDocument) {
 
     if(!e.fileName.endsWith('.git') && e.fileName.includes('.')) {
+
+      file = addFile(workspaceName, e.fileName);
+
     item.text = "";
     item.show();
     clearInterval(interval);
@@ -187,9 +192,15 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand('timeplusplus.refreshEntry', () =>
     treeItems.refresh()
   );
+
+
 }
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+
+
+
+}
 
 
 function newWorkspace(name: string) : Folder {
@@ -398,12 +409,16 @@ function updateAll(file: File | undefined) {
 
 
     if(folders !== []) {
-      folders.forEach(f => updateTime(f.totalTime, file.time));
+      folders.forEach(f => {
+        updateTime(f.totalTime, file.time);
+      });
     }
 
     if(workspace !== undefined) {
       updateTime(workspace.totalTime, file.time);
     }
+
+    
   }
 
 }
