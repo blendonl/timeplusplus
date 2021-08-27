@@ -74,83 +74,27 @@ export function activate(context: vscode.ExtensionContext) {
  
   
 
-  // if (vscode.window.activeTextEditor !== undefined) {
+  if (vscode.window.activeTextEditor !== undefined) {
 
-  //   updateWorkspaceName();
+    updateWorkspaceName();
 
-  //   file = addFile(
-  //     workspaceName ?? '',
-  //     vscode.window.activeTextEditor.document.fileName ?? ''
-  //   );
+    fileOpend(vscode.window.activeTextEditor.document.fileName ?? '', item);
+  
+  }
 
-  //   if(file !== undefined) {
-      
-  //     let timeFunc = findTimeFunction(file.name);
-
-  //     if(timeFunc === undefined) {
-  //       timeFunctions.push(new TimeFunctions(file));
-  //       timeFunc = timeFunctions[timeFunctions.length - 1];
-  //     }
-
-      
-  //     if(!timeFunc.isStrarted) {
-  //       timeFunc.start();
-  //     }
-  //     interval = setInterval(() => {
-  //       item.text = timeFunctions[timeFunctions.length - 1].getTime();
-  //       item.show();
-  //     }, 1000);
-  //   }
-  // }
-
-
-  let visibleTextEditors:vscode.TextEditor[] = vscode.window.visibleTextEditors;
 
   vscode.window.onDidChangeVisibleTextEditors( (e: vscode.TextEditor[]) => {
-
-    visibleTextEditors = e;
-
-    stopTime(visibleTextEditors);
-
-
+    stopTime(e);
   });
 
   vscode.window.onDidChangeActiveTextEditor( (e: vscode.TextEditor | undefined) => {
 
     
-    if(e !== undefined && e.document.fileName !== undefined) {
-
-      if(!e.document.fileName.endsWith('.git') && e.document.fileName.includes('.') && e.document.languageId !== 'jsonc') {
-
-        updateWorkspaceName();
-        file = addFile(
-          workspaceName ?? '',
-          e.document.fileName,
-        );
-    
-        if(file !== undefined) {
-
-          let timeFunc = findTimeFunction(file.name);
-
-          if(timeFunc === undefined) {
-            timeFunctions.push(new TimeFunctions(file));
-
-            timeFunc = timeFunctions[timeFunctions.length -1];
-          }
-        
-          clearInterval(interval);
-          
-          if(!timeFunc.isStrarted) {
-
-            timeFunc.start();
-          }
-            interval = setInterval(() => {
-            item.text = timeFunc?.getTime() ?? '0:0:0';
-            item.show();
-          }, 1000);
-        
-        }
-      }
+    if(e !== undefined && e.document.fileName !== undefined && e.document.languageId !== 'json') {
+      
+      updateWorkspaceName();
+      
+      fileOpend(e.document.fileName, item);
     }
   });
 
@@ -224,6 +168,43 @@ export function deactivate() {
 
 }
 
+
+function fileOpend(fileName: string, item : vscode.StatusBarItem) {
+ 
+  if(!fileName.endsWith('.git') && fileName.includes('.')) {
+
+    file = addFile(
+      workspaceName ?? '',
+      fileName,
+    );
+
+    if(file !== undefined) {
+
+      let timeFunc = findTimeFunction(file.name);
+
+      if(timeFunc === undefined) {
+        timeFunctions.push(new TimeFunctions(file));
+
+        timeFunc = timeFunctions[timeFunctions.length -1];
+      }
+    
+      clearInterval(interval);
+      
+      if(!timeFunc.isStrarted) {
+
+        timeFunc.start();
+      }
+        interval = setInterval(() => {
+          timeFunc?.updateTime();
+          
+          item.text = timeFunc?.getTime() ?? '0:0:0';
+          item.show();
+      }, 1000);
+    
+    }
+  }
+
+}
 
 function  updateWorkspaceName() {
   if(vscode.workspace.workspaceFolders !== undefined) {
