@@ -1,5 +1,5 @@
 
-import { Element } from "./Element";
+import { Element } from "./element";
 import { Time } from "./time";
 
 export class File implements Element {

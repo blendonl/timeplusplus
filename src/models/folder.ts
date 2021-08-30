@@ -1,7 +1,6 @@
 import { Time } from "./time";
-import { File } from "./file";
-import { Element } from "./Element";
-import { Utils } from "../utils";
+import { Element } from "./element";
+
 export class Folder implements Element {
   
   name: string;

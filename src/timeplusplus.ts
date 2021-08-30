@@ -4,7 +4,6 @@ import { Time } from './models/time';
 import { Folder } from './models/folder';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Element } from './models/Element';
 import { Utils } from './utils';
 export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
@@ -34,20 +33,21 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
 
     try {
-    let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
+      let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
 
     
-    if(element === undefined) {
-      return workspaces.map(workspace => 
-        new TreeItem(
-          workspace.name, 
-          '',
-          'workspace', 
-          workspace.totalTime, 
-          workspace.date, 
-          vscode.TreeItemCollapsibleState.Collapsed
-        ));
-    }
+      if(element === undefined) {
+        return workspaces.map(workspace => 
+          new TreeItem(
+            workspace.name, 
+            '',
+            'workspace', 
+            workspace.totalTime, 
+            workspace.time,
+            workspace.date, 
+            vscode.TreeItemCollapsibleState.Collapsed
+          ));
+      }
 
   
       let fold : Folder | undefined =   element.title === 'workspace' ? this.findFolder(element.name,'.') : this.findFolder(element.workspaceName, element.name);
@@ -56,7 +56,13 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
       
       if(fold !== undefined) {
         return fold.subElements.map(sb => 'subElements' in sb ? 
-           new TreeItem(sb.name, fold?.isMainFolder ? fold.name : element.workspaceName,'folder',  sb.totalTime, sb.date, vscode.TreeItemCollapsibleState.Collapsed) 
+           new TreeItem(
+             sb.name, 
+             fold?.isMainFolder ? fold.name : element.workspaceName,'folder',  
+             sb.totalTime, 
+             sb.time,
+             sb.date, 
+             vscode.TreeItemCollapsibleState.Collapsed) 
            
            
            : new TreeItem(
@@ -64,14 +70,15 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
             fold?.isMainFolder ? fold.name : element.workspaceName,
             'file',
             sb.totalTime,
+            sb.time,
             sb.date,
             vscode.TreeItemCollapsibleState.None
-      )); 
-        }
-
-      } catch(err) {
-        
+            )); 
       }
+
+    } catch(err) {
+      
+    }
   }
 
 
@@ -152,6 +159,7 @@ export class TreeItem extends vscode.TreeItem {
   public workspaceName: string,
   public title: string,
   public totalTime: Time,
+  public time: Time,
   public date: Date,
   public readonly collapsibleState: vscode.TreeItemCollapsibleState)
  {
@@ -160,11 +168,11 @@ export class TreeItem extends vscode.TreeItem {
 
 
   get tooltip(): string {
-    return `${basename(this.name)}-${this.totalTime.hours + " : " + this.totalTime.minutes + " : " + this.totalTime.seconds }`;
+    return "Last time worked for: " + (this.time.hours + " hrs " + Utils.formatToMinutes(this.time.minutes) + " min");
   }
 
   get description(): string {
-    return this.totalTime.hours + " : " + this.totalTime.minutes + " : " + this.totalTime.seconds ;
+    return this.totalTime.hours + " : " + this.totalTime.minutes + " : " + this.totalTime.seconds  ;
   }
 
 }

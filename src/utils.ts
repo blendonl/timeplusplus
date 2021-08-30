@@ -39,4 +39,9 @@ export class Utils {
     
     }
 
+
+    public static formatToMinutes(minutes: number) {
+        return (minutes > 9) ? minutes : '0' + minutes;
+    }
+
 }

@@ -2,6 +2,7 @@ import { File } from "./models/file";
 import { FileSystemError } from "vscode";
 import { Time } from "./models/time";
 import { deactivate } from "./extension";
+import { Utils } from "./utils";
 
 export class TimeFunctions {
   constructor(public file: File) {
@@ -17,46 +18,26 @@ export class TimeFunctions {
   
   
   public start() {
-  
     this.isStrarted = true;
     this.dateStarted = new Date();
   }
 
-  expandTime(time: Time) {
-    // time.seconds +=1;
-
-    // if (time.seconds >= 60) {
-    //   time.minutes++;
-    //   time.seconds = 0;
-    // }
-    // if (time.minutes >= 60) {
-    //   time.hours++;
-    //   time.minutes = 0;
-    // }
-
-
-    this.isStrarted = true;
-
-  }
 
   public stop() { 
-
-    // clearInterval(this.interval);
-
     this.isStrarted = false;
- 
   }
 
   public getTime() {
     return (
-
-      this.file.totalTime.hours > 0 ? (
-      this.file.totalTime.hours +
-      " hr " +
-      this.file.totalTime.minutes +
-      " min " 
-      ) :
-      this.file.totalTime.minutes + " min"
+      this.file.totalTime.hours > 0 ? 
+      (
+        this.file.totalTime.hours +" hr " +
+        Utils.formatToMinutes(this.file.totalTime.minutes) +" min " 
+      ) 
+      : 
+      (this.file.totalTime.minutes > 0) 
+      ? Utils.formatToMinutes(this.file.totalTime.minutes) + " min" 
+      : Utils.formatToMinutes(this.file.totalTime.seconds) + " sec"
       
     );
   }
@@ -75,11 +56,6 @@ export class TimeFunctions {
     
     this.setTime(this.file.time, time);
     this.setTime(this.file.totalTime, time);
-    
-    
-    
-    
-
   }
 
   public setTime(time: Time, miliseconds: number) {

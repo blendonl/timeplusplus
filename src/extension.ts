@@ -411,7 +411,9 @@ function updateAll(file: File | undefined) {
       
       for (let index = folders.length - 1; index >= 0; index--) {
         
-        folders[index].totalTime = getTime(folders[index]);
+        folders[index].totalTime = getTime(folders[index]).totalTime;
+        
+        folders[index].time = getTime(folders[index]).time;
 
 
       }
@@ -419,7 +421,9 @@ function updateAll(file: File | undefined) {
     }
 
     if(workspace !== undefined) {
-      workspace.totalTime = getTime(workspace);
+      workspace.totalTime = getTime(workspace).totalTime;
+      
+      workspace.time = getTime(workspace).time;
     }
 
     
@@ -502,12 +506,15 @@ function stopTime(textEditors: vscode.TextEditor[]) {
  
 
 }
-function getTime(folder: Folder) : Time {
+
+function getTime(folder: Folder) : {time: Time, totalTime: Time} {
   let time: Time = new Time(0, 0, 0);
-  folder.subElements.forEach(s => {
-    
-    Utils.addTime(time, s.totalTime);
+  let totalTime: Time = new Time(0, 0, 0);
+  folder.subElements.forEach(s => {    
+    Utils.addTime(time, s.time);
+    Utils.addTime(totalTime, s.totalTime);
   });
 
-  return time;
+  return { time : time, totalTime: totalTime};
 }
+
