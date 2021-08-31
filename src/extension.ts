@@ -23,6 +23,9 @@ let interval : NodeJS.Timeout;
 let file: File | undefined;
 let workspaceName: string;
 let timeFunctions: TimeFunctions[] = [];
+let filesOpend: string[] = [];
+let active: boolean;
+
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -72,7 +75,18 @@ export function activate(context: vscode.ExtensionContext) {
   //Read workspace
 
  
-  
+  vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
+
+    let timeFunction = timeFunctions.find(f => f.file.name === e.textEditor.document.fileName);
+
+    if(timeFunction !== undefined) {
+      timeFunction.lastTimeActive = 0;
+      fileOpend(e.textEditor.document.fileName, item);
+    }
+
+    
+  });
+
 
   if (vscode.window.activeTextEditor !== undefined) {
 
@@ -84,6 +98,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 
   vscode.window.onDidChangeVisibleTextEditors( (e: vscode.TextEditor[]) => {
+
+    filesOpend = e.map(ee => ee.document.fileName);
+
     stopTime(e);
   });
 
@@ -195,9 +212,19 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
         timeFunc.start();
       }
         interval = setInterval(() => {
-          timeFunc?.updateTime();
           
-          item.text = timeFunc?.getTime() ?? '0:0:0';
+          if(timeFunc !== undefined) {
+            if(timeFunc?.lastTimeActive > 15) {
+              clearInterval(interval);
+              timeFunc.stop();
+            }
+
+            if(timeFunc.isStrarted) {
+              timeFunc?.updateTime();
+            }
+          
+          }
+          item.text = timeFunc?.isStrarted ? timeFunc?.getTime() ?? '0:0:0' : 'Paused';
           item.show();
       }, 1000);
     
