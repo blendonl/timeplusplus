@@ -211,7 +211,9 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
 
         timeFunc.start();
       }
-        interval = setInterval(() => {
+
+      
+      interval = setInterval(() => {
           
           if(timeFunc !== undefined) {
             if(timeFunc?.lastTimeActive > 15) {
