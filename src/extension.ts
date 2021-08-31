@@ -212,6 +212,7 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
         timeFunc.start();
       }
 
+
       
       interval = setInterval(() => {
           
