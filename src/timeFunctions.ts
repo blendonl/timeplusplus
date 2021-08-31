@@ -1,9 +1,6 @@
 import { File } from "./models/file";
-import { FileSystemError } from "vscode";
 import { Time } from "./models/time";
-import { deactivate } from "./extension";
 import { Utils } from "./utils";
-import { time } from "console";
 
 export class TimeFunctions {
   constructor(public file: File) {

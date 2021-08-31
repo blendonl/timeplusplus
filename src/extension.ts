@@ -7,12 +7,10 @@ import { Utils } from "./utils";
 import {
   existsSync,
   readFileSync,
-  unlink,
   writeFile,
 } from "fs";
-import { dirname, toNamespacedPath } from "path";
+import { dirname} from "path";
 import {  TreeView } from "./timeplusplus";
-import { time } from "console";
 import { clearInterval } from "timers";
 
 
@@ -73,14 +71,21 @@ export function activate(context: vscode.ExtensionContext) {
   
   
   //Read workspace
+  
+  let workingFileTimeFunction: TimeFunctions | undefined;
 
  
   vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
 
-    let timeFunction = timeFunctions.find(f => f.file.name === e.textEditor.document.fileName);
+    if(workingFileTimeFunction === undefined || workingFileTimeFunction.file.name !== e.textEditor.document.fileName) {
 
-    if(timeFunction !== undefined) {
-      timeFunction.lastTimeActive = 0;
+      workingFileTimeFunction = timeFunctions.find(f => f.file.name === e.textEditor.document.fileName);
+
+    }
+
+    if(workingFileTimeFunction !== undefined && workingFileTimeFunction.lastTimeActive > 0) {
+      workingFileTimeFunction.lastTimeActive = 0;
+  
       fileOpend(e.textEditor.document.fileName, item);
     }
 
@@ -99,7 +104,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   vscode.window.onDidChangeVisibleTextEditors( (e: vscode.TextEditor[]) => {
 
-    filesOpend = e.map(ee => ee.document.fileName);
+   
 
     stopTime(e);
   });
@@ -212,8 +217,6 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
         timeFunc.start();
       }
 
-
-      
       interval = setInterval(() => {
           
           if(timeFunc !== undefined) {
