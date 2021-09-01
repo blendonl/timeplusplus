@@ -12,17 +12,17 @@ import {
 import { dirname} from "path";
 import {  TreeView } from "./timeplusplus";
 import { clearInterval } from "timers";
+import { ElementServices } from "./services/elementServices";
 
 
 
 
-let workspaces: Folder[];
+let workspaces: Folder[] = [];
 let interval : NodeJS.Timeout;
-let file: File | undefined;
+let currentFile: File | undefined;
+let currentWorkspace: Folder;
 let workspaceName: string;
 let timeFunctions: TimeFunctions[] = [];
-let filesOpend: string[] = [];
-let active: boolean;
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -44,37 +44,30 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
 
+  workspaces = openWorkspaces();
+
+  currentWorkspace = ElementServices.findWorkspace(workspaces, workspaceName) ?? ElementServices.newWorkspace(workspaceName); 
 
 
-  workspaces = [];
-
-    if(existsSync('./timeplusplus.json')) {
+  if(ElementServices.findWorkspace(workspaces, workspaceName) === undefined) {
       
-      try {
-      workspaces = JSON.parse(readFileSync('./timeplusplus.json', {encoding: 'utf-8'},));
-      }catch(err) {
-        item.text = err;
-      }
-    } else {
-      try {
-      save();
-
-      } catch(err) {
-        item.text = err;
-      }
-    }
-
-    if(findWorkspace(workspaceName) === undefined) {
-      
-      workspaces.push(newWorkspace(workspaceName ?? 'No Name'));
-    }
+    workspaces.push(currentWorkspace);
+  }
   
   
-  //Read workspace
+
+  
+  if (vscode.window.activeTextEditor !== undefined) {
+
+    updateWorkspaceName();
+
+    fileOpend(vscode.window.activeTextEditor.document.fileName ?? '', item);
+  
+  }
   
   let workingFileTimeFunction: TimeFunctions | undefined;
-
- 
+  
+  
   vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
 
     if(workingFileTimeFunction === undefined || workingFileTimeFunction.file.name !== e.textEditor.document.fileName) {
@@ -93,19 +86,8 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
 
-  if (vscode.window.activeTextEditor !== undefined) {
-
-    updateWorkspaceName();
-
-    fileOpend(vscode.window.activeTextEditor.document.fileName ?? '', item);
-  
-  }
-
 
   vscode.window.onDidChangeVisibleTextEditors( (e: vscode.TextEditor[]) => {
-
-   
-
     stopTime(e);
   });
 
@@ -121,30 +103,6 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
 
-  // vscode.workspace.onDidOpenTextDocument(function (e: vscode.TextDocument) {
-
-    
-
-  //   if(!e.fileName.endsWith('.git') && e.fileName.includes('.') && e.languageId !== 'jsonc') {
-  //   file = addFile(
-  //     workspaceName ?? '',
-  //     e.fileName,
-  //   );
-
-  //   if(file !== undefined) {
-    
-  //     timeFunctions.push(new TimeFunctions(file));
-      
-  //     timeFunctions[timeFunctions.length - 1].start();
-  //     interval = setInterval(() => {
-  //       item.text = timeFunctions[timeFunctions.length - 1].getTime();
-  //       item.show();
-  //     }, 1000);
-    
-  //   }
-  //   }
-  // });
-  
 
  
   vscode.workspace.onDidCloseTextDocument(function (e: vscode.TextDocument) {
@@ -153,23 +111,23 @@ export function activate(context: vscode.ExtensionContext) {
 
       updateWorkspaceName();
 
-      file = addFile(workspaceName, e.fileName);
+      currentFile = ElementServices.findFile(currentWorkspace, getFolderName(e.fileName), e.fileName);
 
-    item.text = "";
-    item.show();
-    clearInterval(interval);
+      item.text = "";
+      item.show();
+      clearInterval(interval);
 
-    let timeFunc = findTimeFunction(e.fileName);
+      let timeFunc = findTimeFunction(e.fileName);
 
-    if(timeFunc !== undefined && timeFunc.isStrarted) {
-      timeFunc.stop();
-    }
+      if(timeFunc !== undefined && timeFunc.isStrarted) {
+        timeFunc.stop();
+      }
 
-
-    updateAll(file);
-
+      if(currentFile !== undefined) {
+        updateAll(currentFile);
+      }
  
-    save();
+      save();
     }
   });
 
@@ -195,17 +153,14 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
  
   if(!fileName.endsWith('.git') && fileName.includes('.')) {
 
-    file = addFile(
-      workspaceName ?? '',
-      fileName,
-    );
+    currentFile = ElementServices.addFile(currentWorkspace, getFolderName(fileName), fileName);
 
-    if(file !== undefined) {
+    if(currentFile !== undefined) {
 
-      let timeFunc = findTimeFunction(file.name);
+      let timeFunc = findTimeFunction(currentFile.name);
 
       if(timeFunc === undefined) {
-        timeFunctions.push(new TimeFunctions(file));
+        timeFunctions.push(new TimeFunctions(currentFile));
 
         timeFunc = timeFunctions[timeFunctions.length -1];
       }
@@ -219,19 +174,19 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
 
       interval = setInterval(() => {
           
-          if(timeFunc !== undefined) {
-            if(timeFunc?.lastTimeActive > 15) {
-              clearInterval(interval);
-              timeFunc.stop();
-            }
-
-            if(timeFunc.isStrarted) {
-              timeFunc?.updateTime();
-            }
-          
+        if(timeFunc !== undefined) {
+          if(timeFunc?.lastTimeActive > 15) {
+            clearInterval(interval);
+            timeFunc.stop();
           }
-          item.text = timeFunc?.isStrarted ? timeFunc?.getTime() ?? '0:0:0' : 'Paused';
-          item.show();
+
+          if(timeFunc.isStrarted) {
+            timeFunc?.updateTime();
+          }
+        
+        }
+        item.text = timeFunc?.isStrarted ? timeFunc?.getTime() ?? '0:0:0' : 'Paused';
+        item.show();
       }, 1000);
     
     }
@@ -239,191 +194,18 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
 
 }
 
-function  updateWorkspaceName() {
+function updateWorkspaceName() {
   if(vscode.workspace.workspaceFolders !== undefined) {
     workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
   }    
 }
 
-
-function newWorkspace(name: string) : Folder {
-  return new Folder(workspaceName, [], true, new Time(0, 0, 0), new Time(0, 0, 0), new Date());
-
-  
-}
-
-function addFile(workspaceName: string, fileName: string) : File | undefined{
-  
-  let folderName : string = getFolderName(fileName); // dirname(fileName);
-
-  let file : File | undefined = findFile(workspaceName, folderName, fileName);
-
-  let workspace : Folder | undefined;
-  
-  if(file === undefined) {
-    
-    if(folderName === '.') {
-      workspace = workspaces.find(work => work.isMainFolder && work.name === workspaceName);
-      
-      file = {
-        name: fileName,
-        time: {
-          hours: 0,
-          minutes: 0,
-          seconds: 0
-        },
-        totalTime: {
-          hours: 0,
-          minutes: 0,
-          seconds: 0
-        },
-        date: new Date()
-      };
-      workspace?.subElements.push(file);
-
-      return file;
-    } else {
-
-      let folder: Folder | undefined = findFolder(workspaceName, folderName);
-
-     
-
-      if(folder === undefined) {
-         folder = addFolder(workspaceName, folderName) as Folder;
-      } 
-
-        
-      file = {
-        name: fileName,
-        time: {
-          hours: 0,
-          minutes: 0,
-          seconds: 0
-        },
-        totalTime: {
-          hours: 0,
-          minutes: 0,
-          seconds: 0
-        },
-        date: new Date()
-      };
-
-        folder.subElements.push(file);
-
-      }
-
-
-    
-    return file;
-  }
-
-  return file;
-    
-}
-
-
 function getFolderName(fileName: string) : string {
   return dirname(vscode.workspace.asRelativePath(fileName));
 }
 
-function seperateFolder(folderName: string, startIndex: number) : string[] {
 
-  let strings : string[] = [];
-  let i = 0;
-  let count = 0;
-    for (let index = 0; index < folderName.length; index++) {
-      if(folderName[index] === '\\' || folderName[index] === '/') {
-        count++;
-        
-      
-          strings.push(folderName.slice(i, index));
-          i = index + 1;
-        }
-      
-
-    }
-
-    strings.push(folderName.slice(i, folderName.length));
-
-    return strings;
-}
- 
-
-
-function findFolder(workspaceName: string, folderName: string) {
-
-  let foldersNames: string[] = seperateFolder(folderName, 0);
-
-  let folder : Folder | undefined = workspaces.find(w => w.name === workspaceName) as Folder;
-
-
-
-  for(let i = 0; i < foldersNames.length; i++) {
-
-    folder = folder?.subElements.find(f => f.name === Utils.mergeFolderNames(foldersNames, 0, i )) as Folder;
-
-  }
-
-  return folder;
-
-  
-}
-
-function addFolder(workspaceName: string, folderName: string) : Folder{
-
-  let folder: Folder = findFolder(workspaceName, folderName);
-
-  if(folder === undefined) {
-
-    folder = workspaces.find(w => w.name === workspaceName) as Folder;
-
-    let foldersNames : string[] = seperateFolder(folderName, 0);
-
-    for (let index = 0; index < foldersNames.length; index++) {
-
-      let temp : Folder = folder.subElements.find(f => f.name === Utils.mergeFolderNames(foldersNames, 0, index)) as Folder;
-
-
-      if(temp === undefined) {
-
-        folder.subElements.push(new Folder(Utils.mergeFolderNames(foldersNames, 0, index), [], false, new Time(0, 0, 0), new Time(0, 0, 0), new Date()));
-        folder = folder.subElements[folder.subElements.length -1] as Folder;
-      } else {
-
-        folder = temp;
-      }
-
-      
-    }
-
-  }
-
-  return folder;
-}
-
-function findFile(workspaceName: string, folderName: string, fileName: string) : File | undefined{
-
-  if(folderName === '.') {
-    return workspaces.find(work => work.name === workspaceName)?.subElements.find(f => f.name === fileName);
-  }
-  
-  let folder: Folder | undefined = findFolder(workspaceName, folderName);
-
-  return folder?.subElements.find(f => f.name === fileName) as File;
-      
-}
-
-function save() {
-  writeFile("./timeplusplus.json", JSON.stringify(workspaces), function (err) {
-    if (err) {
-      console.log(err);
-    }
-  });
-
-  console.log();
-}
-
-function updateAll(file: File | undefined) {
+function updateAll(file: File) {
 
   if(file !== undefined) {
 
@@ -431,14 +213,9 @@ function updateAll(file: File | undefined) {
       workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
     }
 
-    let folders: Folder[] = findFolders(workspaceName ?? '', getFolderName(file.name));
-
-    let workspace: Folder | undefined = findWorkspace(workspaceName ?? '');
-
+    let folders: Folder[] = ElementServices.findFolders(currentWorkspace, getFolderName(file.name));
 
     
-    
-
 
     if(folders !== []) {
       
@@ -453,61 +230,14 @@ function updateAll(file: File | undefined) {
     
     }
 
-    if(workspace !== undefined) {
-      workspace.totalTime = getTime(workspace).totalTime;
+    if(currentWorkspace !== undefined) {
+      currentWorkspace.totalTime = getTime(currentWorkspace).totalTime;
       
-      workspace.time = getTime(workspace).time;
+      currentWorkspace.time = getTime(currentWorkspace).time;
     }
 
     
   }
-
-}
-
-function findFolders(workspaceName: string, folderName: string) : Folder[] {
-  let folders : Folder[] = [];
-
-  let folderNames: string[] = seperateFolder(folderName, 0);
-
-
-  for (let index = 0; index < folderNames.length; index++) {
-    let temp : Folder = findFolder(workspaceName, Utils.mergeFolderNames(folderNames, 0, index));
-
-    if(temp !== undefined) {
-      folders.push(temp);
-    }
-  }
-  return folders;
-
-}
-
-
-
-function findWorkspace(workspaceName: string) : Folder | undefined {
-  return workspaces.find(w => w.name === workspaceName);
-}
-
-
-function updateTime(totalTime: Time, time: Time) {
-  totalTime.seconds += time.seconds;
-  if (totalTime.seconds >= 60) {
-
-    totalTime.minutes++;
-
-    totalTime.seconds > 60 ? totalTime.seconds -=60 : totalTime.seconds = 0;
-   
-  }
-
-  totalTime.minutes += time.minutes;
-  
-  if (totalTime.minutes >= 60) {
-    totalTime.hours++;
-    
-    totalTime.minutes > 60 ? totalTime.minutes -= 60 :totalTime.minutes = 0;
-    
-  }
-  
-  totalTime.hours += time.hours;
 
 }
 
@@ -551,3 +281,27 @@ function getTime(folder: Folder) : {time: Time, totalTime: Time} {
   return { time : time, totalTime: totalTime};
 }
 
+function openWorkspaces(): Folder[]  {
+  try {
+    if(existsSync('./timeplusplus.json')) {
+    
+        return JSON.parse(readFileSync('./timeplusplus.json', {encoding: 'utf-8'})) as Folder[];
+        //item.text = err;
+    } else {
+        
+       save();
+    }
+  }
+  catch(err) {
+  }
+  
+  return [];
+}
+
+function  save() {
+  writeFile("./timeplusplus.json", JSON.stringify(workspaces), function (err) {
+    if (err) {
+      console.log(err);
+    }
+  });   
+}
