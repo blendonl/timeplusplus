@@ -77,9 +77,9 @@ export class ElementServices {
 
         let foldersNames: string[] = ElementServices.seperateFolder(folderName, 0);
       
-        let folder : Folder | undefined = workspace.subElements.find(f => 'subElements' in f && f.name === folderName) as Folder;
+        let folder : Folder | undefined = workspace.subElements.find(f => 'subElements' in f && f.name === foldersNames[0]) as Folder;
       
-        for(let i = 0; i < foldersNames.length; i++) {
+        for(let i = 1; i < foldersNames.length; i++) {
       
           folder = folder?.subElements.find(f => f.name === Utils.mergeFolderNames(foldersNames, 0, i )) as Folder;
       

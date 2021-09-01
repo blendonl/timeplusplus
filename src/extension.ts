@@ -43,7 +43,6 @@ export function activate(context: vscode.ExtensionContext) {
     workspaceName = 'No Name';
   }
 
-
   workspaces = openWorkspaces();
 
   currentWorkspace = ElementServices.findWorkspace(workspaces, workspaceName) ?? ElementServices.newWorkspace(workspaceName); 
@@ -107,7 +106,9 @@ export function activate(context: vscode.ExtensionContext) {
  
   vscode.workspace.onDidCloseTextDocument(function (e: vscode.TextDocument) {
 
-    if(!e.fileName.endsWith('.git') && e.fileName.includes('.')) {
+    let relativePath = vscode.workspace.asRelativePath(e.fileName);
+
+    if(!e.fileName.endsWith('.git') && e.fileName.includes('.') && !(relativePath[1] === ':' || relativePath[0] === '/') ) {
 
       updateWorkspaceName();
 
@@ -150,8 +151,10 @@ export function deactivate() {
 
 
 function fileOpend(fileName: string, item : vscode.StatusBarItem) {
- 
-  if(!fileName.endsWith('.git') && fileName.includes('.')) {
+  
+  let relativePath = vscode.workspace.asRelativePath(fileName);
+
+  if(!fileName.endsWith('.git') && fileName.includes('.') && !(relativePath[1] === ':' || relativePath[0] === '/')) {
 
     currentFile = ElementServices.addFile(currentWorkspace, getFolderName(fileName), fileName);
 
