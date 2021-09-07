@@ -37,6 +37,8 @@ export class ElementServices {
         if(folder !== undefined) {
             return folder;
         }
+
+        folder = workspace;
       
         let foldersNames : string[] = ElementServices.seperateFolder(folderName, 0);
       
@@ -47,7 +49,7 @@ export class ElementServices {
         
             if(temp === undefined) {
         
-                folder.subElements.push(new Folder(Utils.mergeFolderNames(foldersNames, 0, index), [], false, new Time(0, 0, 0), new Time(0, 0, 0), new Date()));
+                folder.subElements.push(new Folder(Utils.mergeFolderNames(foldersNames, 0, index), [], false, '',new Time(0, 0, 0), new Time(0, 0, 0), new Date()));
                 folder = folder.subElements[folder.subElements.length -1] as Folder;
             
             } else {
@@ -75,11 +77,15 @@ export class ElementServices {
 
     static findFolder(workspace: Folder, folderName: string) {
 
+        if(folderName === '.') {
+            return workspace;
+        }
+
         let foldersNames: string[] = ElementServices.seperateFolder(folderName, 0);
       
         let folder : Folder | undefined = workspace.subElements.find(f => 'subElements' in f && f.name === foldersNames[0]) as Folder;
       
-        for(let i = 1; i < foldersNames.length; i++) {
+        for(let i = 1; i < foldersNames.length && folder !== undefined; i++) {
       
           folder = folder?.subElements.find(f => f.name === Utils.mergeFolderNames(foldersNames, 0, i )) as Folder;
       
@@ -110,8 +116,9 @@ export class ElementServices {
     static newWorkspace(workspaceName: string) : Folder {
         return new Folder(
             workspaceName, 
-            [], 
-            true, 
+            [],
+            true,
+            '', 
             new Time(0, 0, 0), 
             new Time(0, 0, 0), 
             new Date()

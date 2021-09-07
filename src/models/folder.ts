@@ -12,6 +12,7 @@ export class Folder implements Element {
     name: string,
     public subElements: Element[] = [],
     public isMainFolder: boolean,
+    public githubUrl: string,
     time: Time,
     totalTime: Time,
     date: Date,
