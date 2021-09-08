@@ -46,5 +46,21 @@ export class Utils {
         return (minutes > 9) ? minutes : '0' + minutes;
     }
 
+    public static removeAnyOtherChar(name: string) {
+
+  
+      name = name.replace('.', '');
+      name = name.replace('.', '');
+      name = name.replace(',', '');
+      name = name.replace('#', '');
+      name = name.replace('$', '');
+      name = name.replace('/', '');
+      name = name.replace('[', ''); 
+      name = name.replace(']', '');       
+      
+      return name;
+
+    }
+
     
 }

@@ -5,12 +5,13 @@ import { Folder } from './models/folder';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Utils } from './utils';
+import { User } from './models/user';
 export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
   
  
  workspaceName: string;
-  constructor(public workspaceRoot: string) {
+  constructor(public workspaceRoot: string, public user: User) {
 
     if(vscode.workspace.workspaceFolders !== undefined) {
        this.workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
@@ -33,11 +34,11 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
 
 
     try {
-      let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
+     // let this.user.folders: Folder[] = this.user.folders;
 
     
       if(element === undefined) {
-        return workspaces.map(workspace => 
+        return this.user.folders.map(workspace => 
           new TreeItem(
             workspace.name, 
             '',
@@ -120,7 +121,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   
  findFolder(workspaceName: string, folderName: string) {
 
-  let workspaces: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
+  //let this.user.folders: Folder[] = JSON.parse(fs.readFileSync(this.workspaceRoot, {encoding : "utf-8"}));
 
   let foldersNames: string[] = [];
 
@@ -130,7 +131,7 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   }
   
   
-    let folder : Folder | undefined = workspaces.find(w => w.name === workspaceName) as Folder;
+    let folder : Folder | undefined = this.user.folders.find(w => w.name === workspaceName) as Folder;
   
   
     if(folderName !== '.') {

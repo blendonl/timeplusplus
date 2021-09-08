@@ -14,8 +14,6 @@ import { Connect } from './connect';
 
 
 
-
-let workspaces: Folder[] = [];
 let interval : NodeJS.Timeout;
 let currentFile: File | undefined;
 let currentWorkspace: Folder;
@@ -39,14 +37,20 @@ export async function activate(context: vscode.ExtensionContext) {
   let ghAuth = await vscode.authentication.getSession('github', []);
 
   if(ghAuth !== undefined) {
+
+   
     
-    user = await Connect.getUser(parseInt(ghAuth.account.id)) ?? new User(parseInt(ghAuth.account.id), ghAuth.account.label, []);;
-    if(user.folders === []) {
-      Connect.addUser(user);
+    user = await Connect.getUser(parseInt(ghAuth.account.id)) ?? new User(ghAuth.account.id, ghAuth.account.label, []);;
+    if('folders' in user) {
+      if(user.folders.length === 0) {
+        let result = await Connect.addUser(user);
+      }        
+    } else {
+      user['folders'] = [] as Folder[];
     }
-    
-    workspaces = user.folders ?? [];
-    currentWorkspace = ElementServices.findWorkspace(workspaces, workspaceName) ?? ElementServices.newWorkspace(workspaceName); 
+
+
+    currentWorkspace = ElementServices.findWorkspace(user.folders, workspaceName) ?? ElementServices.newWorkspace(workspaceName); 
     
   
   }
@@ -79,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
         
   let item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     
-  let treeItems : TreeView = new TreeView('./timeplusplus.json');
+  let treeItems : TreeView = new TreeView('./timeplusplus.json', user);
 
   vscode.window.registerTreeDataProvider("timeplusplus", treeItems );
 
@@ -89,9 +93,9 @@ export async function activate(context: vscode.ExtensionContext) {
           
           
 
-  if(ElementServices.findWorkspace(workspaces, workspaceName) === undefined) {
+  if(ElementServices.findWorkspace(user.folders, workspaceName) === undefined) {
       
-    workspaces.push(currentWorkspace);
+    user.folders.push(currentWorkspace);
     if(user !== undefined) {
       //Connect.addProject(user, currentWorkspace);
     }
@@ -150,7 +154,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 
-    Connect.addProject(user, currentWorkspace);
+   // Connect.addProject(user, currentWorkspace);
     if(e !== undefined && e.document.fileName !== undefined && e.document.languageId !== 'json') {
       
       updateWorkspaceName();
@@ -183,11 +187,13 @@ export async function activate(context: vscode.ExtensionContext) {
       }
 
       if(currentFile !== undefined) {
-        updateAll(currentFile);
+        updateAll(currentFile, e.fileName);
       }
       
      // Connect.updateProject(user, currentWorkspace);
       //save();
+
+      Connect.updateWorkspace(user);
     }
   });
 
@@ -201,7 +207,8 @@ export async function activate(context: vscode.ExtensionContext) {
         fl = ElementServices.findFolder(currentWorkspace, vscode.workspace.asRelativePath(file.oldUri.path));
         
         if(fl !== undefined) { 
-          fl.name = vscode.workspace.asRelativePath(file.newUri.path);
+          fl.name = vscode.workspace.asRelativePath(file.newUri.path)
+          ;
         }
       }
 
@@ -285,7 +292,7 @@ function getFolderName(fileName: string) : string {
 }
 
 
-function updateAll(file: File) {
+function updateAll(file: File, fileName: string) {
 
   if(file !== undefined) {
 
@@ -293,7 +300,7 @@ function updateAll(file: File) {
       workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
     }
 
-    let folders: Folder[] = ElementServices.findFolders(currentWorkspace, getFolderName(file.name));
+    let folders: Folder[] =   ElementServices.findFolders(currentWorkspace, getFolderName(fileName));
 
     
 
@@ -361,29 +368,10 @@ function getTime(folder: Folder) : {time: Time, totalTime: Time} {
   return { time : time, totalTime: totalTime};
 }
 
-function openWorkspaces(): Folder[]  {
 
-  return Connect.getProjects(user);
-
-
-  // try {
-  //   if(existsSync('./timeplusplus.json')) {
-    
-  //       return JSON.parse(readFileSync('./timeplusplus.json', {encoding: 'utf-8'})) as Folder[];
-  //       //item.text = err;
-  //   } else {
-        
-  //      save();
-  //   }
-  // }
-  // catch(err) {
-  // }
-  
-  // return [];
-}
 
 function  save() {
-  writeFile("./timeplusplus.json", JSON.stringify(workspaces), function (err) {
+  writeFile("./timeplusplus.json", JSON.stringify(user.folders), function (err) {
     if (err) {
       console.log(err);
     }

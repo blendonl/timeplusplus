@@ -1,3 +1,5 @@
+import { connect } from "http2";
+import { Connect } from "../connect";
 import { File } from "../models/file";
 import { Folder } from "../models/folder";
 import { Time } from "../models/time";
@@ -51,6 +53,7 @@ export class ElementServices {
         
                 folder.subElements.push(new Folder(Utils.mergeFolderNames(foldersNames, 0, index), [], false, '',new Time(0, 0, 0), new Time(0, 0, 0), new Date()));
                 folder = folder.subElements[folder.subElements.length -1] as Folder;
+                
             
             } else {
         
@@ -114,8 +117,9 @@ export class ElementServices {
     }
          
     static newWorkspace(workspaceName: string) : Folder {
+        let names = this.seperateFolder(workspaceName, 0);
         return new Folder(
-            workspaceName, 
+            names[names.length], 
             [],
             true,
             '', 
@@ -140,7 +144,7 @@ export class ElementServices {
         folders.push(temp);
         
         for (let index = 1; index < folderNames.length; index++) {
-          let temp : Folder = ElementServices.findFolder(folders[folders.length - 1], Utils.mergeFolderNames(folderNames, 0, index));
+          let temp : Folder | undefined = folders[folders.length - 1].subElements.find( f => f.name === Utils.mergeFolderNames(folderNames, 0, index)) as Folder;
       
           if(temp !== undefined) {
             folders.push(temp);
@@ -151,7 +155,10 @@ export class ElementServices {
     }
 
     static findWorkspace(workspaces: Folder[], workspaceName: string) : Folder | undefined {
-        return workspaces.find(w => w.isMainFolder && w.name === workspaceName);
+        let names = this.seperateFolder(workspaceName, 0);
+    
+        return workspaces.find(w => w.isMainFolder && w.name === names[names.length - 1]);
     }
+
       
 }
