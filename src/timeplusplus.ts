@@ -3,7 +3,6 @@ import { basename } from 'path';
 import { Time } from './models/time';
 import { Folder } from './models/folder';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import { Utils } from './utils';
 import { User } from './models/user';
 export class TreeView implements vscode.TreeDataProvider<TreeItem> {
@@ -13,8 +12,8 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
  workspaceName: string;
   constructor(public workspaceRoot: string, public user: User) {
 
-    if(vscode.workspace.workspaceFolders !== undefined) {
-       this.workspaceName = vscode.workspace.workspaceFolders[0].uri.path;
+    if(vscode.workspace.name !== undefined) {
+       this.workspaceName = vscode.workspace.name;
     }
   }
 
@@ -24,22 +23,32 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
   }
 
   getChildren(element?: TreeItem): Thenable<TreeItem[]>{
-     
-      return Promise.resolve(this.getElements(element));
     
+    try {
+      let a = Promise.resolve(this.getElements(element));
+      
+    
+      return a;
+
+    } catch(err) {
+      console.log(err)
+      return [];
+    }
    
   }
 
   getElements(element?: TreeItem) : TreeItem[] {
 
 
-    try {
      // let this.user.folders: Folder[] = this.user.folders;
+      
+     
 
     
       if(element === undefined) {
-        return this.user.folders.map(workspace => 
-          new TreeItem(
+
+       
+        return this.user.folders.map(workspace =>  new TreeItem(
             workspace.name, 
             '',
             'workspace', 
@@ -47,10 +56,9 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
             workspace.time,
             workspace.date, 
             vscode.TreeItemCollapsibleState.Collapsed
-          ));
-      }
+        ));  
 
-  
+      }
       let fold : Folder | undefined =   element.title === 'workspace' ? this.findFolder(element.name,'.') : this.findFolder(element.workspaceName, element.name);
 
 
@@ -77,9 +85,8 @@ export class TreeView implements vscode.TreeDataProvider<TreeItem> {
             )); 
       }
 
-    } catch(err) {
-      
-    }
+
+    // }
   }
 
 
@@ -164,7 +171,7 @@ export class TreeItem extends vscode.TreeItem {
   public date: Date,
   public readonly collapsibleState: vscode.TreeItemCollapsibleState)
  {
-  super(basename(name), collapsibleState);
+  super((name), collapsibleState);
 }
 
 

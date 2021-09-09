@@ -117,9 +117,8 @@ export class ElementServices {
     }
          
     static newWorkspace(workspaceName: string) : Folder {
-        let names = this.seperateFolder(workspaceName, 0);
         return new Folder(
-            names[names.length], 
+            workspaceName,
             [],
             true,
             '', 

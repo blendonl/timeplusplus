@@ -1,45 +1,46 @@
-import { FirebaseApp, initializeApp } from '@firebase/app';
-import {getDatabase, ref, set, get, DatabaseReference, child, onValue, update, push} from 'firebase/database' 
-import { basename } from 'path';
-import { isDeepStrictEqual } from 'util';
 import { Folder } from './models/folder';
 import { User } from './models/user';
 import * as firebase from 'firebase-admin';
 import {  } from 'firebase-admin';
-import { Utils } from './utils';
-import { ElementServices } from './services/elementServices';
+import { writeFile } from 'fs';
+import { TreeItem } from 'vscode';
 
 export class Connect {
 
-    static firebaseConfig = {
-        apiKey: "AIzaSyDkuREpZ3xLCMtWpf0uQUHs4FyYw_IehBw",
-        authDomain: "timeplusplus-1af29.firebaseapp.com",
-        databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com",
-        projectId: "timeplusplus-1af29",
-        storageBucket: "timeplusplus-1af29.appspot.com",
-        messagingSenderId: "260082124510",
-        appId: "1:260082124510:web:f2b9f61c9455ba2c6ba44f",
-        measurementId: "G-LT1VTVTTQW"
-      };
+    // static firebaseConfig = {
+    //     apiKey: "AIzaSyDkuREpZ3xLCMtWpf0uQUHs4FyYw_IehBw",
+    //     authDomain: "timeplusplus-1af29.firebaseapp.com",
+    //     databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com",
+    //     projectId: "timeplusplus-1af29",
+    //     storageBucket: "timeplusplus-1af29.appspot.com",
+    //     messagingSenderId: "260082124510",
+    //     appId: "1:260082124510:web:f2b9f61c9455ba2c6ba44f",
+    //     measurementId: "G-LT1VTVTTQW"
+    //   };
 
-    static app: FirebaseApp = initializeApp({
-        apiKey: "AIzaSyDkuREpZ3xLCMtWpf0uQUHs4FyYw_IehBw",
-        authDomain: "timeplusplus-1af29.firebaseapp.com",
-        databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com",
-        projectId: "timeplusplus-1af29",
-        storageBucket: "timeplusplus-1af29.appspot.com",
-        messagingSenderId: "260082124510",
-        appId: "1:260082124510:web:f2b9f61c9455ba2c6ba44f",
-        measurementId: "G-LT1VTVTTQW"
-    });
+    // static app: FirebaseApp = initializeApp({
+    //     apiKey: "AIzaSyDkuREpZ3xLCMtWpf0uQUHs4FyYw_IehBw",
+    //     authDomain: "timeplusplus-1af29.firebaseapp.com",
+    //     databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com",
+    //     projectId: "timeplusplus-1af29",
+    //     storageBucket: "timeplusplus-1af29.appspot.com",
+    //     messagingSenderId: "260082124510",
+    //     appId: "1:260082124510:web:f2b9f61c9455ba2c6ba44f",
+    //     measurementId: "G-LT1VTVTTQW"
+    // });
     
-    static serviceAccount = require("C:\\Users\\blend\\Downloads\\timeplusplus-1af29-firebase-adminsdk-uxw9v-5a28d8ce71.json");
-
-  
+    static serviceAccount  = () => { 
+        try {    
+        return require(__dirname + '/timeplusplus-1af29-firebase-adminsdk-uxw9v-5a28d8ce71.json'); 
+        } catch(err) {
+            console.log(err);
+        }
+    }
     static connect()  {
+        
         if(!firebase.apps.length) {
             firebase.initializeApp({
-                credential: firebase.credential.cert(this.serviceAccount),
+                credential: firebase.credential.cert(this.serviceAccount()),
                 databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com"
             });
         }
@@ -47,7 +48,7 @@ export class Connect {
 
     static async getUser(userId: number) : Promise<User | undefined>{
 
-        
+        try { 
         this.connect();
 
         let db = firebase.database();
@@ -61,6 +62,7 @@ export class Connect {
             if(snapshot !== undefined) {
 
                 let value = snapshot.val();
+								
 
 
                 if('folders' in value && !(Array.isArray(value.folders))) {
@@ -79,11 +81,10 @@ export class Connect {
                 reject(undefined);
             }
         });
-     
-        
+
+    } catch(err) {
        
-
-
+    }
     }
 
     static async addUser(user: User) : Promise<boolean> {
@@ -119,39 +120,63 @@ export class Connect {
 
     }
 
+    // static getAllUser(folder: Folder) : User[] {
+
+	//     let all : User[] = []
+
+	//     this.connect();
+
+	//     let ref = firebase.database().ref('users')
+
+	//     ref.once('value', (value) => {
+		
+	// 	    let users : User[] = value.val();
+
+	// 	    if(users !== undefined) {
+	// 		users.foreach(u => {
+	// 			if('folders' in u) {
+
+	// 				let temp = u.folders.find(f => f.name === folder.name);	
+
+	// 				if(temp !== undefined) {
+	// 					all.push(u);
+	// 				}
+	// 			}
+				
+	// 		});
+	// 	    }
+
+	//     })
+
+	//     return all;
+    // }
+
   
 
-    static getProjects(user: User) : Folder[]{
-        let projects: Folder [] = [];
-        get(child(ref(getDatabase()), '/users/' + user.userid + '/folders')).then((snapshot) => {
-            if(snapshot.val() !== null) {
-                return snapshot.val() as Folder[];
-            }
-        });
-
-        return [];
-    }
-    
-  // Initialize Firebase
-    
-
-    readWorkspaces(user: User) {
-
-    }
-  
 
     static updateWorkspace(user: User) {
 
-       
+       try { 
 
         this.connect();
         let db = firebase.database();
 
         let ref  = db.ref().child('users').child(user.userid.toString()).child('folders');
 
-        ref.update(user.folders);
+        ref.update(user.folders).catch((err) => {
+
+            // writeFile('C:\\Users\\blend\\Desktop\\errrors.txt', err, (err) => {
+
+            // });
+
+        });
         
-     
+    } catch(err ) {
+
+            // writeFile('C:\\Users\\blend\\Desktop\\errors.txt',err  + '', (erro) => {
+            //     console.log(erro);
+            // });
+    }
      
 
     }
