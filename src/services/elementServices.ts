@@ -159,5 +159,46 @@ export class ElementServices {
         return workspaces.find(w => w.isMainFolder && w.name === names[names.length - 1]);
     }
 
+    static getTimeForFolder(folder: Folder) : {time: Time, totalTime: Time} {
+        let time: Time = new Time(0, 0, 0);
+        let totalTime: Time = new Time(0, 0, 0);
+        folder.subElements.forEach(s => {    
+            Utils.addTime(time, s.time);
+            Utils.addTime(totalTime, s.totalTime);
+        });
+
+        return { time : time, totalTime: totalTime};
+    }
+
+    static updateAll(currentWorkspace: Folder, folderName: string, file: File, ) {
+
+        if(file !== undefined) {
+
+            let folders: Folder[] =   ElementServices.findFolders(currentWorkspace, folderName);
+
+            if(folders !== []) {
+            
+            for (let index = folders.length - 1; index >= 0; index--) {
+                
+                folders[index].totalTime = ElementServices.getTimeForFolder(folders[index]).totalTime;
+                
+                folders[index].time = ElementServices.getTimeForFolder(folders[index]).time;
+
+
+            }
+            
+            }
+
+            if(currentWorkspace !== undefined) {
+            currentWorkspace.totalTime = ElementServices.getTimeForFolder(currentWorkspace).totalTime;
+            
+            currentWorkspace.time = ElementServices.getTimeForFolder(currentWorkspace).time;
+            }
+
+            
+        }
+
+
+    }
       
 }

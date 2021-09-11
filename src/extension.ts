@@ -1,9 +1,7 @@
 import { TimeFunctions } from "./timeFunctions";
 import { Folder } from "./models/folder";
 import { File } from "./models/file";
-import { Time } from "./models/time";
 import * as vscode from "vscode";
-import { Utils } from "./utils";
 import { writeFile } from "fs";
 import { basename, dirname } from "path";
 import {  TreeView } from "./timeplusplus";
@@ -19,12 +17,11 @@ let currentWorkspace: Folder;
 let workspaceName: string;
 let timeFunctions: TimeFunctions[] = [];
 let user: User;
-let errors: string;
+let logs: {type: string, value: string};
 
 
 export async function activate(context: vscode.ExtensionContext) {
 
- try {
   if(vscode.workspace.name !== undefined) {
     workspaceName = vscode.workspace.name; 
   } else {
@@ -32,60 +29,25 @@ export async function activate(context: vscode.ExtensionContext) {
   }
   
 
-  let ghAuth = await vscode.authentication.getSession('github', []);
+  let auth = await vscode.authentication.getSession('github', []);
 
 
-  if(ghAuth !== undefined) {
-
-    user = await Connect.getUser(parseInt(ghAuth.account.id)) ?? new User(ghAuth.account.id, ghAuth.account.label, []);;
-    if('folders' in user) {
-      if(user.folders.length === 0) {
-        let result = await Connect.addUser(user);
-      }        
-    } else {
-      user['folders'] = [] as Folder[];
-    }
-
-
-    currentWorkspace = ElementServices.findWorkspace(user.folders, workspaceName) ?? ElementServices.newWorkspace(workspaceName); 
-    
-  
+  if(auth !== undefined) {
+    user = await getUser(auth);
   } else {
-	
-    errors += '\n' + 'no session';
-writeFile("./timeplusplus.txt", 'no session', function (err) {
-    if (err) {
-      console.log(err);
-    }
-  });   
-   save(); 
+    user = new User('no name', 'no name', []); 
   }
+
+
+  let tempcurrentWorkspace = ElementServices.findWorkspace(user.folders, workspaceName); 
   
+  if(tempcurrentWorkspace === undefined) {
+    currentWorkspace = ElementServices.newWorkspace(workspaceName);
+    user.folders.push(currentWorkspace);
+  } else {
+    currentWorkspace = tempcurrentWorkspace;
+  } 
 
-
-  // if(workspace !== undefined) {
-
-  // vscode.workspace.findFiles(
-  //   '**/*.*',
-  //   '**/node_modules/**'
-  // ).then((value : vscode.Uri[]) => {
-    
-    //   value.forEach(val => addFile(val.path));
-    // }, ((resa) => {
-      //   let a = resa;
-      // }));
-      // }
-      
-      
-      
-      
-      // unlink('./timeplusplus.json', function(ee) {  
-        
-        // });
-        
-        //Create status bar item
-        
-  
         
   let item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     
@@ -93,23 +55,9 @@ writeFile("./timeplusplus.txt", 'no session', function (err) {
 
   vscode.window.registerTreeDataProvider("timeplusplus", treeItems );
  
-         
   vscode.commands.registerCommand('timeplusplus.refreshEntry', () =>
     treeItems.refresh()
   );
-
-
-          
-
-  if(ElementServices.findWorkspace(user.folders, workspaceName) === undefined) {
-      
-    user.folders.push(currentWorkspace);
-    if(user !== undefined) {
-      //Connect.addProject(user, currentWorkspace);
-    }
-  }
-  
-  
 
   
   if (vscode.window.activeTextEditor !== undefined) {
@@ -134,7 +82,7 @@ writeFile("./timeplusplus.txt", 'no session', function (err) {
     if(workingFileTimeFunction !== undefined && workingFileTimeFunction.lastTimeActive > 0) {
       workingFileTimeFunction.lastTimeActive = 0;
   
-      fileOpend(e.textEditor.document.fileName, item);
+//      fileOpend(e.textEditor.document.fileName, item);
     }
 
     
@@ -183,13 +131,11 @@ writeFile("./timeplusplus.txt", 'no session', function (err) {
       }
 
       if(currentFile !== undefined) {
-        updateAll(currentFile, e.fileName);
+       ElementServices.updateAll(currentWorkspace, getFolderName(e.fileName), currentFile);
       }
       
-     // Connect.updateProject(user, currentWorkspace);
-      //save();
+      (auth === undefined) ? save() : Connect.updateWorkspace(user);
 
-      Connect.updateWorkspace(user);
     }
   });
 
@@ -203,27 +149,39 @@ writeFile("./timeplusplus.txt", 'no session', function (err) {
         fl = ElementServices.findFolder(currentWorkspace, vscode.workspace.asRelativePath(file.oldUri.path));
         
         if(fl !== undefined) { 
-          fl.name = vscode.workspace.asRelativePath(file.newUri.path)
-          ;
+          fl.name = vscode.workspace.asRelativePath(file.newUri.path);
         }
       }
 
     });
 
-    save();
+    (auth === undefined) ? save() : Connect.updateWorkspace(user);
   }));
-
-} catch(err) {
-  console.log();
-}
-
-
 }
 // this method is called when your extension is deactivated
 export function deactivate() {
 
 
 
+}
+
+
+ async function getUser(auth: vscode.AuthenticationSession) : Promise<User> {
+  let user = await Connect.getUser(parseInt(auth.account.id)) ?? new User(auth.account.id, auth.account.label, []);;
+
+  return new Promise((resolve, reject) => {
+    if('folders' in user) {
+      // if(user.folders.length === 0) {
+      //   let result = await Connect.addUser(user);
+
+      // }        
+    } else {
+      user['folders'] = [] as Folder[];
+    }
+
+    resolve(user);
+    
+  });
 }
 
 function addFile(fileName: string) : File | undefined {
@@ -289,43 +247,6 @@ function getFolderName(fileName: string) : string {
   return dirname(vscode.workspace.asRelativePath(fileName));
 }
 
-
-function updateAll(file: File, fileName: string) {
-
-  if(file !== undefined) {
-
-    if(vscode.workspace.name !== undefined) {
-      workspaceName = vscode.workspace.name;
-    }
-
-    let folders: Folder[] =   ElementServices.findFolders(currentWorkspace, getFolderName(fileName));
-
-    
-
-    if(folders !== []) {
-      
-      for (let index = folders.length - 1; index >= 0; index--) {
-        
-        folders[index].totalTime = getTime(folders[index]).totalTime;
-        
-        folders[index].time = getTime(folders[index]).time;
-
-
-      }
-    
-    }
-
-    if(currentWorkspace !== undefined) {
-      currentWorkspace.totalTime = getTime(currentWorkspace).totalTime;
-      
-      currentWorkspace.time = getTime(currentWorkspace).time;
-    }
-
-    
-  }
-
-}
-
 function findTimeFunction(fileName: string) : TimeFunctions | undefined {
   let timeFunc : TimeFunctions | undefined =  timeFunctions.find(tf => tf.file.name === fileName);
 
@@ -351,23 +272,11 @@ function stopTime(textEditors: vscode.TextEditor[]) {
     }
   });
 
- 
-
 }
-
-function getTime(folder: Folder) : {time: Time, totalTime: Time} {
-  let time: Time = new Time(0, 0, 0);
-  let totalTime: Time = new Time(0, 0, 0);
-   folder.subElements.forEach(s => {    
-     Utils.addTime(time, s.time);
-     Utils.addTime(totalTime, s.totalTime);
-  });
-
-  return { time : time, totalTime: totalTime};
-}
-
 
 
 function  save() {
-  
+  writeFile('./timeplusplus.jon', JSON.stringify(user.folders), (err) => {
+
+  }); 
 }
