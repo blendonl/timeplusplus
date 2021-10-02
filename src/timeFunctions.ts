@@ -50,7 +50,6 @@ export class TimeFunctions {
     if(!this.isStrarted) {
       return;
     }
-
 //    let fileTime = new Date(this.dateStarted).getTime();
 //    this.dateStarted.setTime(Date.now());
 //    let nowTime = Date.now();

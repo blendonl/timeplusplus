@@ -2,7 +2,7 @@ import { TimeFunctions } from "./timeFunctions";
 import { Folder } from "./models/folder";
 import { File } from "./models/file";
 import * as vscode from "vscode";
-import { writeFile } from "fs";
+import { readFile, writeFile } from "fs";
 import { basename, dirname } from "path";
 import {  TreeView } from "./timeplusplus";
 import { clearInterval } from "timers";
@@ -35,7 +35,14 @@ export async function activate(context: vscode.ExtensionContext) {
   if(auth !== undefined) {
     user = await getUser(auth);
   } else {
+      
     user = new User('no name', 'no name', []); 
+
+    readFile('./folders.json', {encoding : 'utf-8'       }, (err, data) => {
+      if(data) {
+        user.folders = JSON.parse(data);
+      }
+    });
   }
 
 
