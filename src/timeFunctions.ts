@@ -77,7 +77,7 @@ export class TimeFunctions {
       time.minutes++;
       time.seconds = time.seconds > 60 ? time.seconds / 60 : 0;
 
-      if(time.minutes === 60) {
+      if(time.minutes >= 60) {
         time.hours++;
       }
     }

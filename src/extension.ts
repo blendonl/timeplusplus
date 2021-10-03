@@ -20,6 +20,7 @@ let user: User;
 let logs: {type: string, value: string};
 
 
+
 export async function activate(context: vscode.ExtensionContext) {
 
   if(vscode.workspace.name !== undefined) {
