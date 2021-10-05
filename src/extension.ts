@@ -24,10 +24,14 @@ let logs: {type: string, value: string};
 export async function activate(context: vscode.ExtensionContext) {
 
   if(vscode.workspace.name !== undefined) {
-    workspaceName = vscode.workspace.name; 
+	  if(vscode.workspace.workspaceFolders) {
+			workspaceName = vscode.workspace.name; 
+	  }		  
   } else {
     workspaceName = 'No Name';
   }
+  
+
   
 
   let auth = await vscode.authentication.getSession('github', []);
