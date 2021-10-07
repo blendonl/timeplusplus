@@ -25,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   if(vscode.workspace.name !== undefined) {
 	  if(vscode.workspace.workspaceFolders) {
-			workspaceName = vscode.workspace.name; 
+			workspaceName = vscode.workspace.workspaceFolders[0].name; 
 	  }		  
   } else {
     workspaceName = 'No Name';
@@ -250,8 +250,8 @@ function fileOpend(fileName: string, item : vscode.StatusBarItem) {
 }
 
 function updateWorkspaceName() {
-  if(vscode.workspace.name !== undefined) {
-    workspaceName = vscode.workspace.name;
+  if(vscode.workspace.name !== undefined && vscode.workspace.workspaceFolders) {
+    workspaceName = vscode.workspace.workspaceFolders[0].name;
   }    
 }
 
