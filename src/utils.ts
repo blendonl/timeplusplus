@@ -1,5 +1,4 @@
-import { existsSync, readFileSync, writeFile } from "fs";
-import { Folder } from "./models/folder";
+import { appendFile } from "fs";
 import { Time } from "./models/time";
 
 export class Utils {
@@ -47,8 +46,6 @@ export class Utils {
     }
 
     public static removeAnyOtherChar(name: string) {
-
-  
       name = name.replace('.', '');
       name = name.replace('.', '');
       name = name.replace(',', '');
@@ -60,6 +57,12 @@ export class Utils {
       
       return name;
 
+    }
+
+    public static addLog(type: string, value: string) {
+      appendFile('./timepluspluslogs.logs', 'Type: ' + type + ' Value: ' + value, (err) => {
+
+      });
     }
 
     

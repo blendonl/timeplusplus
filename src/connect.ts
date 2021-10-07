@@ -4,6 +4,7 @@ import * as firebase from 'firebase-admin';
 import {  } from 'firebase-admin';
 import { writeFile } from 'fs';
 import { TreeItem } from 'vscode';
+import { Utils } from './utils';
 
 export class Connect {
 
@@ -50,12 +51,16 @@ export class Connect {
         "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-uxw9v%40timeplusplus-1af29.iam.gserviceaccount.com"
     };
     static connect()  {
-        
-        if(!firebase.apps.length) {
-            firebase.initializeApp({
-                credential: firebase.credential.cert(this.serviceAccount),
-                databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com"
-            });
+        try { 
+            if(!firebase.apps.length) {
+                firebase.initializeApp({
+                    credential: firebase.credential.cert(this.serviceAccount),
+                    databaseURL: "https://timeplusplus-1af29-default-rtdb.firebaseio.com"
+                });
+            }
+
+        } catch (err) {
+            Utils.addLog('Error', 'Connection with database failed');
         }
     }
 
@@ -96,6 +101,8 @@ export class Connect {
         });
 
     } catch(err) {
+
+        Utils.addLog('Error', 'Couldnt load user data');
        
     }
     }
